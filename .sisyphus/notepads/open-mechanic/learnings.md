@@ -63,3 +63,28 @@ Use `glob.glob()` for macOS port scanning.
 - `rich` — CLI output
 - `python-dotenv` — env var loading
 - `pydantic` — data validation
+
+## Scaffolding Completed (Phase 1)
+
+Files created:
+- `pyproject.toml` — hatchling build, src layout, all deps pinned
+- `.gitignore` — Python + project-specific (data/*.db, .env, logs/)
+- `.env.example` — ANTHROPIC_API_KEY, OBD_PORT, OBD_BAUDRATE, DB_PATH
+- `LICENSE` — MIT 2026, open-mechanic contributors
+- `src/open_mechanic/__init__.py` — __version__ = "0.1.0", __all__ = []
+- `src/open_mechanic/__main__.py` — minimal CLI stub, Phase 3 placeholder
+- `src/open_mechanic/ai/__init__.py` — subpackage docstring
+- `src/open_mechanic/api/__init__.py` — subpackage docstring
+- `src/open_mechanic/db/__init__.py` — subpackage docstring
+- `scripts/.gitkeep`, `data/.gitkeep` — directory placeholders
+- `tests/__init__.py` — empty
+- `docs/SETUP_LINUX.md` — dialout group, dmesg detection, troubleshooting
+- `docs/SETUP_MACOS.md` — FTDI VCP driver, cu.usbserial-* detection
+- `docs/SETUP_WINDOWS.md` — FTDI CDM driver, Device Manager COM port, OBD_PORT required
+
+## pyproject.toml Notes
+
+- Entry point: `open-mechanic = "open_mechanic.__main__:main"`
+- Optional extras: `[dev]` (pytest, ruff, mypy) and `[api]` (fastapi, uvicorn)
+- Wheel target: `packages = ["src/open_mechanic"]`
+- ruff: line-length=100, selects E/F/I/UP/B/SIM
