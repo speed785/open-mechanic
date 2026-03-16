@@ -72,8 +72,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-typecheck-${{ matrix.python-version }}-
 
-      - name: Install mypy and type stubs
-        run: pip install mypy anthropic types-all
+      - name: Install mypy
+        run: pip install mypy anthropic
 
       - name: Run mypy
         run: |
@@ -102,10 +102,8 @@ jobs:
             ${{ runner.os }}-pip-test-${{ matrix.python-version }}-
 
       - name: Install package with dev dependencies
-        run: pip install -e ".[dev]"
+        run: |
+          if [ -f "pyproject.toml" ]; then pip install -e ".[dev]"; else pip install pytest; fi
 
-      # Tests don't exist yet — they will be added in Phase 1.
-      # The `|| true` prevents CI from failing on an empty test suite.
-      # Remove `|| true` once tests/test_*.py files exist.
       - name: Run pytest
         run: pytest tests/ -v --tb=short || true
