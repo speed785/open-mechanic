@@ -1,0 +1,54 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+labels: ["enhancement"]
+body:
+  - type: input
+    id: title
+    attributes:
+      label: Title
+      description: Short summary of the feature
+      placeholder: e.g. Add support for Ford extended PIDs via OBDLink EX
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Description
+      description: What problem does this solve? What's missing or frustrating right now?
+      placeholder: e.g. I can't read transmission temperature on my Ford F-150 because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like this to work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any other approaches you've thought about or tried?
+    validations:
+      required: false
+
+  - type: textarea
+    id: hardware_context
+    attributes:
+      label: Vehicle / Hardware Context
+      description: Is this specific to a particular adapter, vehicle make/model, or OS? Would this require special hardware?
+      placeholder: e.g. Requires OBDLink EX (MS-CAN support), tested on 2018 Ford F-150
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Links, references, screenshots, or anything else that helps explain the request
+    validations:
+      required: false

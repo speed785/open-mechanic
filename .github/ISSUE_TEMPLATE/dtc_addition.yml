@@ -1,0 +1,77 @@
+name: DTC Code Addition
+description: Submit a DTC fault code to add to the offline database
+labels: ["dtc-database", "good first issue"]
+body:
+  - type: input
+    id: dtc_code
+    attributes:
+      label: DTC Code
+      description: The fault code to add (e.g. P0420)
+      placeholder: P0420
+    validations:
+      required: true
+
+  - type: input
+    id: description
+    attributes:
+      label: Description
+      description: Plain-English description of what this code means
+      placeholder: e.g. Catalyst System Efficiency Below Threshold (Bank 1)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How serious is this fault code?
+      options:
+        - info
+        - warning
+        - critical
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - emissions
+        - engine
+        - transmission
+        - fuel
+        - electrical
+        - body
+        - chassis
+        - network
+    validations:
+      required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Source / Reference
+      description: Where did you get this information? (OBD-II spec, manufacturer service manual, AllData, etc.)
+      placeholder: e.g. SAE J2012 standard, or "2018 Ford F-150 service manual"
+    validations:
+      required: false
+
+  - type: textarea
+    id: vehicles_confirmed
+    attributes:
+      label: Vehicles Confirmed On
+      description: Which vehicles have you seen this code on? (year, make, model)
+      placeholder: |
+        - 2018 Ford F-150 3.5L EcoBoost
+        - 2015 Toyota Camry 2.5L
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Common causes, repair tips, or anything else useful for this code
+    validations:
+      required: false
