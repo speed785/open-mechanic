@@ -1,0 +1,3134 @@
+[
+  {
+    "code": "P0087",
+    "description": "Fuel Rail/System Pressure Too Low",
+    "severity": "critical",
+    "category": "fuel"
+  },
+  {
+    "code": "P0088",
+    "description": "Fuel Rail/System Pressure Too High",
+    "severity": "critical",
+    "category": "fuel"
+  },
+  {
+    "code": "P0089",
+    "description": "Fuel Pressure Regulator 1 Performance",
+    "severity": "warning",
+    "category": "fuel"
+  },
+  {
+    "code": "P0090",
+    "description": "Fuel Pressure Regulator 1 Control Circuit",
+    "severity": "warning",
+    "category": "fuel"
+  },
+  {
+    "code": "P0091",
+    "description": "Fuel Pressure Regulator 1 Control Circuit Low",
+    "severity": "warning",
+    "category": "fuel"
+  },
+  {
+    "code": "P0092",
+    "description": "Fuel Pressure Regulator 1 Control Circuit High",
+    "severity": "warning",
+    "category": "fuel"
+  },
+  {
+    "code": "P0093",
+    "description": "Fuel System Leak Detected \u2013 Large Leak",
+    "severity": "critical",
+    "category": "fuel"
+  },
+  {
+    "code": "P0094",
+    "description": "Fuel System Leak Detected \u2013 Small Leak",
+    "severity": "warning",
+    "category": "fuel"
+  },
+  {
+    "code": "P0095",
+    "description": "Intake Air Temperature Sensor 2 Circuit",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0096",
+    "description": "Intake Air Temperature Sensor 2 Circuit Range/Performance",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0097",
+    "description": "Intake Air Temperature Sensor 2 Circuit Low Input",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0098",
+    "description": "Intake Air Temperature Sensor 2 Circuit High Input",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0171",
+    "description": "System Too Lean (Bank 1)",
+    "severity": "warning",
+    "category": "fuel"
+  },
+  {
+    "code": "P0172",
+    "description": "System Too Rich (Bank 1)",
+    "severity": "warning",
+    "category": "fuel"
+  },
+  {
+    "code": "P0173",
+    "description": "Fuel Trim Malfunction (Bank 2)",
+    "severity": "warning",
+    "category": "fuel"
+  },
+  {
+    "code": "P0174",
+    "description": "System Too Lean (Bank 2)",
+    "severity": "warning",
+    "category": "fuel"
+  },
+  {
+    "code": "P0175",
+    "description": "System Too Rich (Bank 2)",
+    "severity": "warning",
+    "category": "fuel"
+  },
+  {
+    "code": "P0100",
+    "description": "Mass or Volume Air Flow Circuit Malfunction",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0101",
+    "description": "Mass or Volume Air Flow Circuit Range/Performance Problem",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0102",
+    "description": "Mass or Volume Air Flow Circuit Low Input",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0103",
+    "description": "Mass or Volume Air Flow Circuit High Input",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0104",
+    "description": "Mass or Volume Air Flow Circuit Intermittent",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0105",
+    "description": "Manifold Absolute Pressure/Barometric Pressure Circuit Malfunction",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0106",
+    "description": "Manifold Absolute Pressure/Barometric Pressure Circuit Range/Performance Problem",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0107",
+    "description": "Manifold Absolute Pressure/Barometric Pressure Circuit Low Input",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0108",
+    "description": "Manifold Absolute Pressure/Barometric Pressure Circuit High Input",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0109",
+    "description": "Manifold Absolute Pressure/Barometric Pressure Circuit Intermittent",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0110",
+    "description": "Intake Air Temperature Circuit Malfunction",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0111",
+    "description": "Intake Air Temperature Circuit Range/Performance Problem",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0112",
+    "description": "Intake Air Temperature Circuit Low Input",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0113",
+    "description": "Intake Air Temperature Circuit High Input",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0114",
+    "description": "Intake Air Temperature Circuit Intermittent",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0115",
+    "description": "Engine Coolant Temperature Circuit Malfunction",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0116",
+    "description": "Engine Coolant Temperature Circuit Range/Performance Problem",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0117",
+    "description": "Engine Coolant Temperature Circuit Low Input",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0118",
+    "description": "Engine Coolant Temperature Circuit High Input",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0119",
+    "description": "Engine Coolant Temperature Circuit Intermittent",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0120",
+    "description": "Throttle/Pedal Position Sensor/Switch A Circuit Malfunction",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0121",
+    "description": "Throttle/Pedal Position Sensor/Switch A Circuit Range/Performance Problem",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0122",
+    "description": "Throttle/Pedal Position Sensor/Switch A Circuit Low Input",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0123",
+    "description": "Throttle/Pedal Position Sensor/Switch A Circuit High Input",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0124",
+    "description": "Throttle/Pedal Position Sensor/Switch A Circuit Intermittent",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0125",
+    "description": "Insufficient Coolant Temperature for Closed Loop Fuel Control",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0130",
+    "description": "O2 Sensor Circuit Malfunction (Bank 1, Sensor 1)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0131",
+    "description": "O2 Sensor Circuit Low Voltage (Bank 1, Sensor 1)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0132",
+    "description": "O2 Sensor Circuit High Voltage (Bank 1, Sensor 1)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0133",
+    "description": "O2 Sensor Circuit Slow Response (Bank 1, Sensor 1)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0134",
+    "description": "O2 Sensor Circuit No Activity Detected (Bank 1, Sensor 1)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0135",
+    "description": "O2 Sensor Heater Circuit Malfunction (Bank 1, Sensor 1)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0136",
+    "description": "O2 Sensor Circuit Malfunction (Bank 1, Sensor 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0137",
+    "description": "O2 Sensor Circuit Low Voltage (Bank 1, Sensor 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0138",
+    "description": "O2 Sensor Circuit High Voltage (Bank 1, Sensor 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0139",
+    "description": "O2 Sensor Circuit Slow Response (Bank 1, Sensor 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0140",
+    "description": "O2 Sensor Circuit No Activity Detected (Bank 1, Sensor 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0141",
+    "description": "O2 Sensor Heater Circuit Malfunction (Bank 1, Sensor 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0150",
+    "description": "O2 Sensor Circuit Malfunction (Bank 2, Sensor 1)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0151",
+    "description": "O2 Sensor Circuit Low Voltage (Bank 2, Sensor 1)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0152",
+    "description": "O2 Sensor Circuit High Voltage (Bank 2, Sensor 1)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0153",
+    "description": "O2 Sensor Circuit Slow Response (Bank 2, Sensor 1)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0154",
+    "description": "O2 Sensor Circuit No Activity Detected (Bank 2, Sensor 1)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0155",
+    "description": "O2 Sensor Heater Circuit Malfunction (Bank 2, Sensor 1)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0156",
+    "description": "O2 Sensor Circuit Malfunction (Bank 2, Sensor 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0157",
+    "description": "O2 Sensor Circuit Low Voltage (Bank 2, Sensor 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0158",
+    "description": "O2 Sensor Circuit High Voltage (Bank 2, Sensor 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0159",
+    "description": "O2 Sensor Circuit Slow Response (Bank 2, Sensor 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0160",
+    "description": "O2 Sensor Circuit No Activity Detected (Bank 2, Sensor 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0161",
+    "description": "O2 Sensor Heater Circuit Malfunction (Bank 2, Sensor 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0300",
+    "description": "Random/Multiple Cylinder Misfire Detected",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0301",
+    "description": "Cylinder 1 Misfire Detected",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0302",
+    "description": "Cylinder 2 Misfire Detected",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0303",
+    "description": "Cylinder 3 Misfire Detected",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0304",
+    "description": "Cylinder 4 Misfire Detected",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0305",
+    "description": "Cylinder 5 Misfire Detected",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0306",
+    "description": "Cylinder 6 Misfire Detected",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0307",
+    "description": "Cylinder 7 Misfire Detected",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0308",
+    "description": "Cylinder 8 Misfire Detected",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0325",
+    "description": "Knock Sensor 1 Circuit Malfunction (Bank 1 or Single Sensor)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0326",
+    "description": "Knock Sensor 1 Circuit Range/Performance (Bank 1 or Single Sensor)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0327",
+    "description": "Knock Sensor 1 Circuit Low Input (Bank 1 or Single Sensor)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0328",
+    "description": "Knock Sensor 1 Circuit High Input (Bank 1 or Single Sensor)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0329",
+    "description": "Knock Sensor 1 Circuit Intermittent (Bank 1 or Single Sensor)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0330",
+    "description": "Knock Sensor 2 Circuit Malfunction (Bank 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0331",
+    "description": "Knock Sensor 2 Circuit Range/Performance (Bank 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0332",
+    "description": "Knock Sensor 2 Circuit Low Input (Bank 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0333",
+    "description": "Knock Sensor 2 Circuit High Input (Bank 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0334",
+    "description": "Knock Sensor 2 Circuit Intermittent (Bank 2)",
+    "severity": "warning",
+    "category": "sensors"
+  },
+  {
+    "code": "P0335",
+    "description": "Crankshaft Position Sensor A Circuit Malfunction",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0336",
+    "description": "Crankshaft Position Sensor A Circuit Range/Performance",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0337",
+    "description": "Crankshaft Position Sensor A Circuit Low Input",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0338",
+    "description": "Crankshaft Position Sensor A Circuit High Input",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0339",
+    "description": "Crankshaft Position Sensor A Circuit Intermittent",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0340",
+    "description": "Camshaft Position Sensor A Circuit Malfunction (Bank 1 or Single Sensor)",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0341",
+    "description": "Camshaft Position Sensor A Circuit Range/Performance (Bank 1 or Single Sensor)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0342",
+    "description": "Camshaft Position Sensor A Circuit Low Input (Bank 1 or Single Sensor)",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0343",
+    "description": "Camshaft Position Sensor A Circuit High Input (Bank 1 or Single Sensor)",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0344",
+    "description": "Camshaft Position Sensor A Circuit Intermittent (Bank 1 or Single Sensor)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0345",
+    "description": "Camshaft Position Sensor A Circuit Malfunction (Bank 2)",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0346",
+    "description": "Camshaft Position Sensor A Circuit Range/Performance (Bank 2)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0347",
+    "description": "Camshaft Position Sensor A Circuit Low Input (Bank 2)",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0348",
+    "description": "Camshaft Position Sensor A Circuit High Input (Bank 2)",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0349",
+    "description": "Camshaft Position Sensor A Circuit Intermittent (Bank 2)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0350",
+    "description": "Ignition Coil Primary/Secondary Circuit Malfunction",
+    "severity": "critical",
+    "category": "ignition"
+  },
+  {
+    "code": "P0351",
+    "description": "Ignition Coil A Primary/Secondary Circuit Malfunction",
+    "severity": "critical",
+    "category": "ignition"
+  },
+  {
+    "code": "P0352",
+    "description": "Ignition Coil B Primary/Secondary Circuit Malfunction",
+    "severity": "critical",
+    "category": "ignition"
+  },
+  {
+    "code": "P0353",
+    "description": "Ignition Coil C Primary/Secondary Circuit Malfunction",
+    "severity": "critical",
+    "category": "ignition"
+  },
+  {
+    "code": "P0354",
+    "description": "Ignition Coil D Primary/Secondary Circuit Malfunction",
+    "severity": "critical",
+    "category": "ignition"
+  },
+  {
+    "code": "P0355",
+    "description": "Ignition Coil E Primary/Secondary Circuit Malfunction",
+    "severity": "critical",
+    "category": "ignition"
+  },
+  {
+    "code": "P0356",
+    "description": "Ignition Coil F Primary/Secondary Circuit Malfunction",
+    "severity": "critical",
+    "category": "ignition"
+  },
+  {
+    "code": "P0357",
+    "description": "Ignition Coil G Primary/Secondary Circuit Malfunction",
+    "severity": "critical",
+    "category": "ignition"
+  },
+  {
+    "code": "P0358",
+    "description": "Ignition Coil H Primary/Secondary Circuit Malfunction",
+    "severity": "critical",
+    "category": "ignition"
+  },
+  {
+    "code": "P0365",
+    "description": "Camshaft Position Sensor B Circuit Malfunction (Bank 1)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0366",
+    "description": "Camshaft Position Sensor B Circuit Range/Performance (Bank 1)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0367",
+    "description": "Camshaft Position Sensor B Circuit Low Input (Bank 1)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0368",
+    "description": "Camshaft Position Sensor B Circuit High Input (Bank 1)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0369",
+    "description": "Camshaft Position Sensor B Circuit Intermittent (Bank 1)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0370",
+    "description": "Timing Reference High Resolution Signal A Malfunction",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0371",
+    "description": "Timing Reference High Resolution Signal A Too Many Pulses",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0372",
+    "description": "Timing Reference High Resolution Signal A Too Few Pulses",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0373",
+    "description": "Timing Reference High Resolution Signal A Intermittent/Erratic Pulses",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0374",
+    "description": "Timing Reference High Resolution Signal A No Pulses",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0375",
+    "description": "Timing Reference High Resolution Signal B Malfunction",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0376",
+    "description": "Timing Reference High Resolution Signal B Too Many Pulses",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0377",
+    "description": "Timing Reference High Resolution Signal B Too Few Pulses",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0378",
+    "description": "Timing Reference High Resolution Signal B Intermittent/Erratic Pulses",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0379",
+    "description": "Timing Reference High Resolution Signal B No Pulses",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0380",
+    "description": "Glow Plug/Heater Circuit A Malfunction",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0381",
+    "description": "Glow Plug/Heater Indicator Circuit Malfunction",
+    "severity": "info",
+    "category": "engine"
+  },
+  {
+    "code": "P0382",
+    "description": "Glow Plug/Heater Circuit B Malfunction",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0383",
+    "description": "Glow Plug Control Module Control Circuit Low",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0384",
+    "description": "Glow Plug Control Module Control Circuit High",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0385",
+    "description": "Crankshaft Position Sensor B Circuit Malfunction",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0386",
+    "description": "Crankshaft Position Sensor B Circuit Range/Performance",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0387",
+    "description": "Crankshaft Position Sensor B Circuit Low Input",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0388",
+    "description": "Crankshaft Position Sensor B Circuit High Input",
+    "severity": "critical",
+    "category": "engine"
+  },
+  {
+    "code": "P0389",
+    "description": "Crankshaft Position Sensor B Circuit Intermittent",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0390",
+    "description": "Camshaft Position Sensor B Circuit Malfunction (Bank 2)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0391",
+    "description": "Camshaft Position Sensor B Circuit Range/Performance (Bank 2)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0392",
+    "description": "Camshaft Position Sensor B Circuit Low Input (Bank 2)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0393",
+    "description": "Camshaft Position Sensor B Circuit High Input (Bank 2)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0394",
+    "description": "Camshaft Position Sensor B Circuit Intermittent (Bank 2)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0395",
+    "description": "Camshaft Position Sensor C Circuit Malfunction (Bank 1)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0396",
+    "description": "Camshaft Position Sensor C Circuit Range/Performance (Bank 1)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0397",
+    "description": "Camshaft Position Sensor C Circuit Low Input (Bank 1)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0398",
+    "description": "Camshaft Position Sensor C Circuit High Input (Bank 1)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0399",
+    "description": "Camshaft Position Sensor C Circuit Intermittent (Bank 1)",
+    "severity": "warning",
+    "category": "engine"
+  },
+  {
+    "code": "P0400",
+    "description": "Exhaust Gas Recirculation Flow Malfunction",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0401",
+    "description": "Exhaust Gas Recirculation Flow Insufficient Detected",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0402",
+    "description": "Exhaust Gas Recirculation Flow Excessive Detected",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0403",
+    "description": "Exhaust Gas Recirculation Circuit Malfunction",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0404",
+    "description": "Exhaust Gas Recirculation Circuit Range/Performance",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0405",
+    "description": "Exhaust Gas Recirculation Sensor A Circuit Low",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0406",
+    "description": "Exhaust Gas Recirculation Sensor A Circuit High",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0407",
+    "description": "Exhaust Gas Recirculation Sensor B Circuit Low",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0408",
+    "description": "Exhaust Gas Recirculation Sensor B Circuit High",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0420",
+    "description": "Catalyst System Efficiency Below Threshold (Bank 1)",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0421",
+    "description": "Warm Up Catalyst Efficiency Below Threshold (Bank 1)",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0422",
+    "description": "Main Catalyst Efficiency Below Threshold (Bank 1)",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0423",
+    "description": "Heated Catalyst Efficiency Below Threshold (Bank 1)",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0424",
+    "description": "Heated Catalyst Temperature Below Threshold (Bank 1)",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0430",
+    "description": "Catalyst System Efficiency Below Threshold (Bank 2)",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0431",
+    "description": "Warm Up Catalyst Efficiency Below Threshold (Bank 2)",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0432",
+    "description": "Main Catalyst Efficiency Below Threshold (Bank 2)",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0433",
+    "description": "Heated Catalyst Efficiency Below Threshold (Bank 2)",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0434",
+    "description": "Heated Catalyst Temperature Below Threshold (Bank 2)",
+    "severity": "warning",
+    "category": "emissions"
+  },
+  {
+    "code": "P0440",
+    "description": "Evaporative Emission Control System Malfunction",
+    "severity": "info",
+    "category": "evap"
+  },
+  {
+    "code": "P0441",
+    "description": "Evaporative Emission Control System Incorrect Purge Flow",
+    "severity": "info",
+    "category": "evap"
+  },
+  {
+    "code": "P0442",
+    "description": "Evaporative Emission Control System Leak Detected (Small Leak)",
+    "severity": "info",
+    "category": "evap"
+  },
+  {
+    "code": "P0443",
+    "description": "Evaporative Emission Control System Purge Control Valve Circuit Malfunction",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0444",
+    "description": "Evaporative Emission Control System Purge Control Valve Circuit Open",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0445",
+    "description": "Evaporative Emission Control System Purge Control Valve Circuit Shorted",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0446",
+    "description": "Evaporative Emission Control System Vent Control Circuit Malfunction",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0447",
+    "description": "Evaporative Emission Control System Vent Control Circuit Open",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0448",
+    "description": "Evaporative Emission Control System Vent Control Circuit Shorted",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0449",
+    "description": "Evaporative Emission Control System Vent Valve/Solenoid Circuit Malfunction",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0450",
+    "description": "Evaporative Emission Control System Pressure Sensor Malfunction",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0451",
+    "description": "Evaporative Emission Control System Pressure Sensor Range/Performance",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0452",
+    "description": "Evaporative Emission Control System Pressure Sensor Low Input",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0453",
+    "description": "Evaporative Emission Control System Pressure Sensor High Input",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0454",
+    "description": "Evaporative Emission Control System Pressure Sensor Intermittent",
+    "severity": "info",
+    "category": "evap"
+  },
+  {
+    "code": "P0455",
+    "description": "Evaporative Emission Control System Leak Detected (Large Leak)",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0456",
+    "description": "Evaporative Emission Control System Leak Detected (Very Small Leak)",
+    "severity": "info",
+    "category": "evap"
+  },
+  {
+    "code": "P0457",
+    "description": "Evaporative Emission Control System Leak Detected (Fuel Cap Loose/Off)",
+    "severity": "info",
+    "category": "evap"
+  },
+  {
+    "code": "P0458",
+    "description": "Evaporative Emission Control System Purge Control Valve Circuit Low",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0459",
+    "description": "Evaporative Emission Control System Purge Control Valve Circuit High",
+    "severity": "warning",
+    "category": "evap"
+  },
+  {
+    "code": "P0560",
+    "description": "System Voltage Malfunction",
+    "severity": "warning",
+    "category": "electrical"
+  },
+  {
+    "code": "P0561",
+    "description": "System Voltage Unstable",
+    "severity": "warning",
+    "category": "electrical"
+  },
+  {
+    "code": "P0562",
+    "description": "System Voltage Low",
+    "severity": "warning",
+    "category": "electrical"
+  },
+  {
+    "code": "P0563",
+    "description": "System Voltage High",
+    "severity": "warning",
+    "category": "electrical"
+  },
+  {
+    "code": "P0700",
+    "description": "Transmission Control System Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0701",
+    "description": "Transmission Control System Range/Performance",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0702",
+    "description": "Transmission Control System Electrical",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0703",
+    "description": "Torque Converter/Brake Switch B Circuit Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0704",
+    "description": "Clutch Switch Input Circuit Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0705",
+    "description": "Transmission Range Sensor Circuit Malfunction (PRNDL Input)",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0706",
+    "description": "Transmission Range Sensor Circuit Range/Performance",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0707",
+    "description": "Transmission Range Sensor Circuit Low Input",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0708",
+    "description": "Transmission Range Sensor Circuit High Input",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0710",
+    "description": "Transmission Fluid Temperature Sensor Circuit Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0711",
+    "description": "Transmission Fluid Temperature Sensor Circuit Range/Performance",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0712",
+    "description": "Transmission Fluid Temperature Sensor Circuit Low Input",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0713",
+    "description": "Transmission Fluid Temperature Sensor Circuit High Input",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0714",
+    "description": "Transmission Fluid Temperature Sensor Circuit Intermittent",
+    "severity": "info",
+    "category": "transmission"
+  },
+  {
+    "code": "P0715",
+    "description": "Input/Turbine Speed Sensor Circuit Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0716",
+    "description": "Input/Turbine Speed Sensor Circuit Range/Performance",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0717",
+    "description": "Input/Turbine Speed Sensor Circuit No Signal",
+    "severity": "critical",
+    "category": "transmission"
+  },
+  {
+    "code": "P0718",
+    "description": "Input/Turbine Speed Sensor Circuit Intermittent",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0719",
+    "description": "Torque Converter/Brake Switch B Circuit Low",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0720",
+    "description": "Output Speed Sensor Circuit Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0721",
+    "description": "Output Speed Sensor Circuit Range/Performance",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0722",
+    "description": "Output Speed Sensor Circuit No Signal",
+    "severity": "critical",
+    "category": "transmission"
+  },
+  {
+    "code": "P0723",
+    "description": "Output Speed Sensor Circuit Intermittent",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0724",
+    "description": "Torque Converter/Brake Switch B Circuit High",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0725",
+    "description": "Engine Speed Input Circuit Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0730",
+    "description": "Incorrect Gear Ratio",
+    "severity": "critical",
+    "category": "transmission"
+  },
+  {
+    "code": "P0731",
+    "description": "Gear 1 Incorrect Ratio",
+    "severity": "critical",
+    "category": "transmission"
+  },
+  {
+    "code": "P0732",
+    "description": "Gear 2 Incorrect Ratio",
+    "severity": "critical",
+    "category": "transmission"
+  },
+  {
+    "code": "P0733",
+    "description": "Gear 3 Incorrect Ratio",
+    "severity": "critical",
+    "category": "transmission"
+  },
+  {
+    "code": "P0734",
+    "description": "Gear 4 Incorrect Ratio",
+    "severity": "critical",
+    "category": "transmission"
+  },
+  {
+    "code": "P0735",
+    "description": "Gear 5 Incorrect Ratio",
+    "severity": "critical",
+    "category": "transmission"
+  },
+  {
+    "code": "P0736",
+    "description": "Reverse Incorrect Ratio",
+    "severity": "critical",
+    "category": "transmission"
+  },
+  {
+    "code": "P0740",
+    "description": "Torque Converter Clutch Circuit Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0741",
+    "description": "Torque Converter Clutch Circuit Performance or Stuck Off",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0742",
+    "description": "Torque Converter Clutch Circuit Stuck On",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0743",
+    "description": "Torque Converter Clutch Circuit Electrical",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0744",
+    "description": "Torque Converter Clutch Circuit Intermittent",
+    "severity": "info",
+    "category": "transmission"
+  },
+  {
+    "code": "P0745",
+    "description": "Pressure Control Solenoid Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0750",
+    "description": "Shift Solenoid A Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0751",
+    "description": "Shift Solenoid A Performance or Stuck Off",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0752",
+    "description": "Shift Solenoid A Stuck On",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0753",
+    "description": "Shift Solenoid A Electrical",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0754",
+    "description": "Shift Solenoid A Intermittent",
+    "severity": "info",
+    "category": "transmission"
+  },
+  {
+    "code": "P0755",
+    "description": "Shift Solenoid B Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0756",
+    "description": "Shift Solenoid B Performance or Stuck Off",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0757",
+    "description": "Shift Solenoid B Stuck On",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0758",
+    "description": "Shift Solenoid B Electrical",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0759",
+    "description": "Shift Solenoid B Intermittent",
+    "severity": "info",
+    "category": "transmission"
+  },
+  {
+    "code": "P0760",
+    "description": "Shift Solenoid C Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0761",
+    "description": "Shift Solenoid C Performance or Stuck Off",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0762",
+    "description": "Shift Solenoid C Stuck On",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0763",
+    "description": "Shift Solenoid C Electrical",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0764",
+    "description": "Shift Solenoid C Intermittent",
+    "severity": "info",
+    "category": "transmission"
+  },
+  {
+    "code": "P0765",
+    "description": "Shift Solenoid D Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0766",
+    "description": "Shift Solenoid D Performance or Stuck Off",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0767",
+    "description": "Shift Solenoid D Stuck On",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0768",
+    "description": "Shift Solenoid D Electrical",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0769",
+    "description": "Shift Solenoid D Intermittent",
+    "severity": "info",
+    "category": "transmission"
+  },
+  {
+    "code": "P0770",
+    "description": "Shift Solenoid E Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0771",
+    "description": "Shift Solenoid E Performance or Stuck Off",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0772",
+    "description": "Shift Solenoid E Stuck On",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0773",
+    "description": "Shift Solenoid E Electrical",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "P0774",
+    "description": "Shift Solenoid E Intermittent",
+    "severity": "info",
+    "category": "transmission"
+  },
+  {
+    "code": "P0775",
+    "description": "Pressure Control Solenoid B Malfunction",
+    "severity": "warning",
+    "category": "transmission"
+  },
+  {
+    "code": "B0001",
+    "description": "Driver Frontal Stage 1 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0002",
+    "description": "Driver Frontal Stage 2 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0003",
+    "description": "Driver Frontal Stage 3 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0004",
+    "description": "Driver Frontal Stage 4 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0005",
+    "description": "Driver Side Stage 1 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0006",
+    "description": "Driver Side Stage 2 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0007",
+    "description": "Driver Curtain Stage 1 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0008",
+    "description": "Driver Curtain Stage 2 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0009",
+    "description": "Passenger Frontal Stage 1 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0010",
+    "description": "Passenger Frontal Stage 2 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0011",
+    "description": "Passenger Frontal Stage 3 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0012",
+    "description": "Passenger Frontal Stage 4 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0013",
+    "description": "Passenger Side Stage 1 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0014",
+    "description": "Passenger Side Stage 2 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0015",
+    "description": "Passenger Curtain Stage 1 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0016",
+    "description": "Passenger Curtain Stage 2 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0017",
+    "description": "Rear Passenger Side Stage 1 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0018",
+    "description": "Rear Passenger Side Stage 2 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0019",
+    "description": "Rear Driver Side Stage 1 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "B0020",
+    "description": "Rear Driver Side Stage 2 Deployment Control",
+    "severity": "warning",
+    "category": "body"
+  },
+  {
+    "code": "C0031",
+    "description": "Right Front Wheel Speed Sensor Circuit",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0032",
+    "description": "Right Front Wheel Speed Sensor Circuit Range/Performance",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0033",
+    "description": "Right Front Wheel Speed Sensor Circuit No Signal",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0034",
+    "description": "Right Front Wheel Speed Sensor Circuit Intermittent",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0035",
+    "description": "Left Front Wheel Speed Sensor Circuit",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0036",
+    "description": "Left Front Wheel Speed Sensor Circuit Range/Performance",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0037",
+    "description": "Left Front Wheel Speed Sensor Circuit No Signal",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0038",
+    "description": "Left Front Wheel Speed Sensor Circuit Intermittent",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0039",
+    "description": "Right Rear Wheel Speed Sensor Circuit",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0040",
+    "description": "Right Rear Wheel Speed Sensor Circuit Range/Performance",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0041",
+    "description": "Right Rear Wheel Speed Sensor Circuit No Signal",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0042",
+    "description": "Right Rear Wheel Speed Sensor Circuit Intermittent",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0043",
+    "description": "Left Rear Wheel Speed Sensor Circuit",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0044",
+    "description": "Left Rear Wheel Speed Sensor Circuit Range/Performance",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0045",
+    "description": "Left Rear Wheel Speed Sensor Circuit No Signal",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0046",
+    "description": "Left Rear Wheel Speed Sensor Circuit Intermittent",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0047",
+    "description": "Right Front Solenoid Valve Circuit",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0048",
+    "description": "Right Front Solenoid Valve Circuit Range/Performance",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0049",
+    "description": "Right Front Solenoid Valve Circuit Low",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0050",
+    "description": "Right Front Solenoid Valve Circuit High",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0051",
+    "description": "Left Front Solenoid Valve Circuit",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0052",
+    "description": "Left Front Solenoid Valve Circuit Range/Performance",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0053",
+    "description": "Left Front Solenoid Valve Circuit Low",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0054",
+    "description": "Left Front Solenoid Valve Circuit High",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0055",
+    "description": "Right Rear Solenoid Valve Circuit",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0056",
+    "description": "Right Rear Solenoid Valve Circuit Range/Performance",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0057",
+    "description": "Right Rear Solenoid Valve Circuit Low",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0058",
+    "description": "Right Rear Solenoid Valve Circuit High",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0059",
+    "description": "Left Rear Solenoid Valve Circuit",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0060",
+    "description": "Left Rear Solenoid Valve Circuit Range/Performance",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0061",
+    "description": "Left Rear Solenoid Valve Circuit Low",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0062",
+    "description": "Left Rear Solenoid Valve Circuit High",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0063",
+    "description": "ABS Pump Motor Circuit",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0064",
+    "description": "ABS Pump Motor Circuit Range/Performance",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0065",
+    "description": "ABS Pump Motor Circuit Low",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0066",
+    "description": "ABS Pump Motor Circuit High",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0067",
+    "description": "ABS Pump Motor Circuit Open",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0068",
+    "description": "ABS Pump Motor Circuit Shorted",
+    "severity": "critical",
+    "category": "chassis"
+  },
+  {
+    "code": "C0069",
+    "description": "ABS Valve Relay Circuit",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0070",
+    "description": "ABS Valve Relay Circuit Range/Performance",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0071",
+    "description": "ABS Valve Relay Circuit Low",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0072",
+    "description": "ABS Valve Relay Circuit High",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0073",
+    "description": "ABS Valve Relay Circuit Open",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0074",
+    "description": "ABS Valve Relay Circuit Shorted",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0075",
+    "description": "Steering Angle Sensor Circuit",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0076",
+    "description": "Steering Angle Sensor Circuit Range/Performance",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0077",
+    "description": "Steering Angle Sensor Circuit Low",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0078",
+    "description": "Steering Angle Sensor Circuit High",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0079",
+    "description": "Steering Angle Sensor Circuit Intermittent",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "C0080",
+    "description": "Lateral Acceleration Sensor Circuit",
+    "severity": "warning",
+    "category": "chassis"
+  },
+  {
+    "code": "U0001",
+    "description": "High Speed CAN Communication Bus",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0002",
+    "description": "High Speed CAN Communication Bus Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0003",
+    "description": "High Speed CAN Communication Bus Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0004",
+    "description": "High Speed CAN Communication Bus Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0005",
+    "description": "High Speed CAN Communication Bus Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0006",
+    "description": "Medium Speed CAN Communication Bus",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0007",
+    "description": "Medium Speed CAN Communication Bus Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0008",
+    "description": "Medium Speed CAN Communication Bus Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0009",
+    "description": "Medium Speed CAN Communication Bus Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0010",
+    "description": "Medium Speed CAN Communication Bus Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0011",
+    "description": "Low Speed CAN Communication Bus",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0012",
+    "description": "Low Speed CAN Communication Bus Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0013",
+    "description": "Low Speed CAN Communication Bus Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0014",
+    "description": "Low Speed CAN Communication Bus Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0015",
+    "description": "Low Speed CAN Communication Bus Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0016",
+    "description": "Single Wire CAN Communication Bus",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0017",
+    "description": "Single Wire CAN Communication Bus Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0018",
+    "description": "Single Wire CAN Communication Bus Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0019",
+    "description": "Single Wire CAN Communication Bus Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0020",
+    "description": "Single Wire CAN Communication Bus Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0021",
+    "description": "Fault Tolerant CAN Communication Bus",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0022",
+    "description": "Fault Tolerant CAN Communication Bus Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0023",
+    "description": "Fault Tolerant CAN Communication Bus Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0024",
+    "description": "Fault Tolerant CAN Communication Bus Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0025",
+    "description": "Fault Tolerant CAN Communication Bus Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0026",
+    "description": "LIN Communication Bus",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0027",
+    "description": "LIN Communication Bus Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0028",
+    "description": "LIN Communication Bus Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0029",
+    "description": "LIN Communication Bus Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0030",
+    "description": "LIN Communication Bus Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0031",
+    "description": "LIN Communication Bus 2",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0032",
+    "description": "LIN Communication Bus 2 Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0033",
+    "description": "LIN Communication Bus 2 Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0034",
+    "description": "LIN Communication Bus 2 Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0035",
+    "description": "LIN Communication Bus 2 Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0036",
+    "description": "LIN Communication Bus 3",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0037",
+    "description": "LIN Communication Bus 3 Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0038",
+    "description": "LIN Communication Bus 3 Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0039",
+    "description": "LIN Communication Bus 3 Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0040",
+    "description": "LIN Communication Bus 3 Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0041",
+    "description": "LIN Communication Bus 4",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0042",
+    "description": "LIN Communication Bus 4 Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0043",
+    "description": "LIN Communication Bus 4 Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0044",
+    "description": "LIN Communication Bus 4 Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0045",
+    "description": "LIN Communication Bus 4 Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0046",
+    "description": "LIN Communication Bus 5",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0047",
+    "description": "LIN Communication Bus 5 Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0048",
+    "description": "LIN Communication Bus 5 Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0049",
+    "description": "LIN Communication Bus 5 Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0050",
+    "description": "LIN Communication Bus 5 Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0051",
+    "description": "LIN Communication Bus 6",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0052",
+    "description": "LIN Communication Bus 6 Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0053",
+    "description": "LIN Communication Bus 6 Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0054",
+    "description": "LIN Communication Bus 6 Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0055",
+    "description": "LIN Communication Bus 6 Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0056",
+    "description": "LIN Communication Bus 7",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0057",
+    "description": "LIN Communication Bus 7 Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0058",
+    "description": "LIN Communication Bus 7 Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0059",
+    "description": "LIN Communication Bus 7 Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0060",
+    "description": "LIN Communication Bus 7 Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0061",
+    "description": "LIN Communication Bus 8",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0062",
+    "description": "LIN Communication Bus 8 Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0063",
+    "description": "LIN Communication Bus 8 Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0064",
+    "description": "LIN Communication Bus 8 Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0065",
+    "description": "LIN Communication Bus 8 Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0066",
+    "description": "LIN Communication Bus 9",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0067",
+    "description": "LIN Communication Bus 9 Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0068",
+    "description": "LIN Communication Bus 9 Open",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0069",
+    "description": "LIN Communication Bus 9 Short to Battery",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0070",
+    "description": "LIN Communication Bus 9 Short to Ground",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0071",
+    "description": "LIN Communication Bus 10",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0072",
+    "description": "LIN Communication Bus 10 Performance",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0073",
+    "description": "Control Module Communication Bus Off",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0074",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0075",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0076",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0077",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0078",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0079",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0080",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0081",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0082",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0083",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0084",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0085",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0086",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0087",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0088",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0089",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0090",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0091",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0092",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0093",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0094",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0095",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0096",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0097",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0098",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0099",
+    "description": "Reserved",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0100",
+    "description": "Lost Communication With ECM/PCM A",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0101",
+    "description": "Lost Communication With TCM",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0102",
+    "description": "Lost Communication With Transfer Case Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0103",
+    "description": "Lost Communication With Gear Shift Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0104",
+    "description": "Lost Communication With Cruise Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0105",
+    "description": "Lost Communication With Fuel Injector Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0106",
+    "description": "Lost Communication With Glow Plug Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0107",
+    "description": "Lost Communication With Throttle Actuator Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0108",
+    "description": "Lost Communication With Alternative Fuel Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0109",
+    "description": "Lost Communication With Fuel Pump Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0110",
+    "description": "Lost Communication With Drive Motor Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0111",
+    "description": "Lost Communication With Battery Energy Control Module A",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0112",
+    "description": "Lost Communication With Battery Energy Control Module B",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0113",
+    "description": "Lost Communication With Emissions Critical Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0114",
+    "description": "Lost Communication With Four-Wheel Drive Clutch Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0115",
+    "description": "Lost Communication With ECM/PCM B",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0116",
+    "description": "Lost Communication With Vehicle Dynamics Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0117",
+    "description": "Lost Communication With Battery Monitoring Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0118",
+    "description": "Lost Communication With Fuel Cell Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0119",
+    "description": "Lost Communication With Fuel Cell Boost Converter Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0120",
+    "description": "Lost Communication With Starter/Generator Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0121",
+    "description": "Lost Communication With Anti-Lock Brake System (ABS) Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0122",
+    "description": "Lost Communication With Vehicle Dynamics Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0123",
+    "description": "Lost Communication With Yaw Rate Sensor Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0124",
+    "description": "Lost Communication With Lateral Acceleration Sensor Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0125",
+    "description": "Lost Communication With Multi-Axis Acceleration Sensor Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0126",
+    "description": "Lost Communication With Steering Angle Sensor Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0127",
+    "description": "Lost Communication With Tire Pressure Monitor Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0128",
+    "description": "Lost Communication With Park Brake Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0129",
+    "description": "Lost Communication With Brake System Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0130",
+    "description": "Lost Communication With Ride Level Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0131",
+    "description": "Lost Communication With Power Steering Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0132",
+    "description": "Lost Communication With Ride Height Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0133",
+    "description": "Lost Communication With Chassis Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0134",
+    "description": "Lost Communication With Ride Comfort Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0135",
+    "description": "Lost Communication With Suspension Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0136",
+    "description": "Lost Communication With Axle Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0137",
+    "description": "Lost Communication With Axle Control Module B",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0138",
+    "description": "Lost Communication With Axle Control Module C",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0139",
+    "description": "Lost Communication With Axle Control Module D",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0140",
+    "description": "Lost Communication With Body Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0141",
+    "description": "Lost Communication With Body Control Module A",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0142",
+    "description": "Lost Communication With Body Control Module B",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0143",
+    "description": "Lost Communication With Body Control Module C",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0144",
+    "description": "Lost Communication With Body Control Module D",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0145",
+    "description": "Lost Communication With Body Control Module E",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0146",
+    "description": "Lost Communication With Gateway A",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0147",
+    "description": "Lost Communication With Gateway B",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0148",
+    "description": "Lost Communication With Gateway C",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0149",
+    "description": "Lost Communication With Gateway D",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0150",
+    "description": "Lost Communication With Gateway E",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0151",
+    "description": "Lost Communication With Restraints Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0152",
+    "description": "Lost Communication With Side Restraints Control Module \u2013 Left",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0153",
+    "description": "Lost Communication With Side Restraints Control Module \u2013 Right",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0154",
+    "description": "Lost Communication With Restraints Occupant Sensing Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0155",
+    "description": "Lost Communication With Instrument Panel Cluster (IPC) Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0156",
+    "description": "Lost Communication With Display Module A",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0157",
+    "description": "Lost Communication With Display Module B",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0158",
+    "description": "Lost Communication With Display Module C",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0159",
+    "description": "Lost Communication With Parking Assist Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0160",
+    "description": "Lost Communication With Audible Alert Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0161",
+    "description": "Lost Communication With Compass Module",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0162",
+    "description": "Lost Communication With Navigation Display Module",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0163",
+    "description": "Lost Communication With Navigation Control Module",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0164",
+    "description": "Lost Communication With HVAC Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0165",
+    "description": "Lost Communication With HVAC Control Module \u2013 Rear",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0166",
+    "description": "Lost Communication With Auxiliary Heater Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0167",
+    "description": "Lost Communication With Vehicle Immobilizer Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0168",
+    "description": "Lost Communication With Vehicle Security Control Module",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0169",
+    "description": "Lost Communication With Sunroof Control Module",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0170",
+    "description": "Lost Communication With Restraints System Sensor A",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0171",
+    "description": "Lost Communication With Restraints System Sensor B",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0172",
+    "description": "Lost Communication With Restraints System Sensor C",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0173",
+    "description": "Lost Communication With Restraints System Sensor D",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0174",
+    "description": "Lost Communication With Restraints System Sensor E",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0175",
+    "description": "Lost Communication With Restraints System Sensor F",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0176",
+    "description": "Lost Communication With Restraints System Sensor G",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0177",
+    "description": "Lost Communication With Restraints System Sensor H",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0178",
+    "description": "Lost Communication With Restraints System Sensor I",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0179",
+    "description": "Lost Communication With Restraints System Sensor J",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0180",
+    "description": "Lost Communication With Automatic Lighting Control Module",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0181",
+    "description": "Lost Communication With Headlamp Leveling Control Module",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0182",
+    "description": "Lost Communication With Lighting Control Module \u2013 Front",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0183",
+    "description": "Lost Communication With Lighting Control Module \u2013 Rear",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0184",
+    "description": "Lost Communication With Radio",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0185",
+    "description": "Lost Communication With Antenna Control Module",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0186",
+    "description": "Lost Communication With Audio Amplifier",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0187",
+    "description": "Lost Communication With Digital Disc Player/Changer Module A",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0188",
+    "description": "Lost Communication With Digital Disc Player/Changer Module B",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0189",
+    "description": "Lost Communication With Digital Disc Player/Changer Module C",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0190",
+    "description": "Lost Communication With Digital Disc Player/Changer Module D",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0191",
+    "description": "Lost Communication With Television",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0192",
+    "description": "Lost Communication With Personal Computer",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0193",
+    "description": "Lost Communication With Digital Audio Control Module A",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0194",
+    "description": "Lost Communication With Digital Audio Control Module B",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0195",
+    "description": "Lost Communication With Subscription Entertainment Receiver Module",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0196",
+    "description": "Lost Communication With Rear Seat Entertainment Module A",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0197",
+    "description": "Lost Communication With Telephone Control Module",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0198",
+    "description": "Lost Communication With Telematic Control Module",
+    "severity": "info",
+    "category": "network"
+  },
+  {
+    "code": "U0199",
+    "description": "Lost Communication With Door Control Module A",
+    "severity": "warning",
+    "category": "network"
+  },
+  {
+    "code": "U0200",
+    "description": "Lost Communication With Door Control Module B",
+    "severity": "warning",
+    "category": "network"
+  }
+]
