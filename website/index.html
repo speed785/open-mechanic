@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>open-mechanic — AI-Powered OBD-II Car Diagnostics</title>
   <meta name="description" content="Open-source AI-powered car diagnostics. Read live sensor data and fault codes, get plain-English diagnosis with repair steps and cost estimates." />
-  <meta name="theme-color" content="#0a0b0d" />
+  <meta name="theme-color" content="#0c0d10" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
   <!-- Fonts -->
@@ -262,7 +262,7 @@
           <h3>Linux</h3>
           <div class="platform-cmd"><code>dmesg | grep ttyUSB</code></div>
           <p>No extra drivers. OBDLink EX detected automatically as <code>/dev/ttyUSB0</code>.</p>
-          <span class="platform-status"><span class="pulse-dot"></span> Full support</span>
+          <span class="platform-status"><span class="pulse-dot"></span> Plug &amp; play — no drivers needed</span>
         </div>
 
         <div class="platform-card">
@@ -278,7 +278,7 @@
           <h3>macOS</h3>
           <div class="platform-cmd"><code>ls /dev/cu.usbserial-*</code></div>
           <p>FTDI VCP driver or native support on macOS 12+.</p>
-          <span class="platform-status"><span class="pulse-dot"></span> Full support</span>
+          <span class="platform-status"><span class="pulse-dot"></span> Native driver on macOS 12+</span>
         </div>
 
         <div class="platform-card">
@@ -293,7 +293,7 @@
           <h3>Windows</h3>
           <div class="platform-cmd"><code>Device Manager → COM3</code></div>
           <p>Set <code>OBD_PORT=COM3</code> in your <code>.env</code> file.</p>
-          <span class="platform-status"><span class="pulse-dot"></span> Full support</span>
+          <span class="platform-status"><span class="pulse-dot"></span> Supported — set OBD_PORT in .env</span>
         </div>
 
       </div>
