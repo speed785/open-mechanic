@@ -36,14 +36,18 @@ class DTCReader:
         try:
             payload: object = json.loads(db_path.read_text(encoding="utf-8"))  # pyright: ignore[reportAny]
         except FileNotFoundError:
-            logger.warning("DTC database file not found at %s; proceeding with empty database", dtc_db_path)
+            logger.warning(
+                "DTC database file not found at %s; proceeding with empty database", dtc_db_path
+            )
             return {}
         except (json.JSONDecodeError, OSError) as exc:
             logger.warning("Failed loading DTC database at %s: %s", dtc_db_path, exc)
             return {}
 
         if not isinstance(payload, list):
-            logger.warning("DTC database at %s is not a list; proceeding with empty database", dtc_db_path)
+            logger.warning(
+                "DTC database at %s is not a list; proceeding with empty database", dtc_db_path
+            )
             return {}
 
         db: dict[str, dict[str, str]] = {}
@@ -64,7 +68,9 @@ class DTCReader:
             severity = entry.get("severity")
             category = entry.get("category")
             db[code] = {
-                "description": description if isinstance(description, str) and description else "Unknown code",
+                "description": description
+                if isinstance(description, str) and description
+                else "Unknown code",
                 "severity": severity if isinstance(severity, str) and severity else "unknown",
                 "category": category if isinstance(category, str) and category else "unknown",
             }
@@ -125,7 +131,9 @@ class DTCReader:
             return []
 
         pending_codes = (
-            self._read_dtc_command(pending_command, status="pending") if pending_command is not None else []
+            self._read_dtc_command(pending_command, status="pending")
+            if pending_command is not None
+            else []
         )
         confirmed_codes = (
             self._read_dtc_command(confirmed_command, status="confirmed")

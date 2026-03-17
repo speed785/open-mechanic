@@ -133,8 +133,7 @@ def format_diagnostic_prompt(
     if dtcs:
         dtc_header = f"Fault Codes ({len(dtcs)}):"
         dtc_lines = "\n".join(
-            f"  - {dtc.code}: {dtc.description} [{dtc.severity}, {dtc.category}]"
-            for dtc in dtcs
+            f"  - {dtc.code}: {dtc.description} [{dtc.severity}, {dtc.category}]" for dtc in dtcs
         )
         fault_section = f"{dtc_header}\n{dtc_lines}"
     else:

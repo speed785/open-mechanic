@@ -70,7 +70,9 @@ class OBDConnection:
     ) -> None:
         env_port = os.getenv("OBD_PORT")
         scanned_ports = scan_ports()
-        resolved_port = port or env_port or (scanned_ports[0] if scanned_ports else get_default_port())
+        resolved_port = (
+            port or env_port or (scanned_ports[0] if scanned_ports else get_default_port())
+        )
 
         self._connection: obd.OBD | None = None
         self._status: ConnectionStatus = ConnectionStatus.DISCONNECTED
