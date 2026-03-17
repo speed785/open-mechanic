@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>open-mechanic — AI-Powered OBD-II Car Diagnostics</title>
+  <meta name="description" content="Open-source AI-powered car diagnostics. Read live sensor data and fault codes, get plain-English diagnosis with repair steps and cost estimates." />
+  <meta name="theme-color" content="#0a0b0d" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+
+  <!-- ============ NOISE OVERLAY ============ -->
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- ============ HEADER ============ -->
+  <header class="site-header" id="site-header">
+    <div class="header-inner">
+      <a href="#" class="logo-link">
+        <svg class="logo-icon" viewBox="0 0 512 512" width="28" height="28" aria-hidden="true">
+          <circle cx="256" cy="256" r="256" fill="var(--bg)"/>
+          <circle cx="256" cy="256" r="240" fill="none" stroke="var(--border)" stroke-width="2"/>
+          <path d="M152 200 L360 200 L340 312 L172 312 Z" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linejoin="round"/>
+          <circle cx="200" cy="236" r="8" fill="var(--accent)"/>
+          <circle cx="232" cy="236" r="8" fill="var(--accent)"/>
+          <circle cx="264" cy="236" r="8" fill="var(--accent)"/>
+          <circle cx="296" cy="236" r="8" fill="var(--accent)"/>
+          <circle cx="328" cy="236" r="8" fill="var(--accent)"/>
+          <circle cx="192" cy="276" r="8" fill="var(--accent)"/>
+          <circle cx="224" cy="276" r="8" fill="var(--accent)"/>
+          <circle cx="256" cy="276" r="8" fill="var(--accent)"/>
+          <circle cx="288" cy="276" r="8" fill="var(--accent)"/>
+          <circle cx="320" cy="276" r="8" fill="var(--accent)"/>
+          <circle cx="352" cy="276" r="8" fill="var(--accent-dim)"/>
+        </svg>
+        <span class="logo-text">open-mechanic</span>
+      </a>
+
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#platforms">Platforms</a>
+        <a href="https://github.com/speed785/open-mechanic" target="_blank" rel="noopener" class="nav-github">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          <span>GitHub</span>
+        </a>
+      </nav>
+
+      <button type="button" class="mobile-menu-btn" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="hero-scanlines" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <div class="hero-content">
+        <span class="hero-label">&#x2B21; AI-POWERED OBD-II DIAGNOSTICS</span>
+        <h1 class="hero-title">Real diagnosis.<br/>No dealer fees.</h1>
+        <p class="hero-body">Plug in an OBD-II adapter, connect your computer, and get plain-English diagnosis with repair steps and cost estimates&nbsp;&mdash; powered by AI, running on your machine.</p>
+        <div class="hero-ctas">
+          <a href="https://github.com/speed785/open-mechanic#quick-start" class="btn btn-primary">Get Started <span aria-hidden="true">&rarr;</span></a>
+          <a href="https://github.com/speed785/open-mechanic" target="_blank" rel="noopener" class="btn btn-outline">View on GitHub</a>
+        </div>
+        <div class="hero-platforms">
+          <span class="platform-badge">Linux</span>
+          <span class="platform-badge">macOS</span>
+          <span class="platform-badge">Windows</span>
+        </div>
+      </div>
+
+      <div class="hero-terminal">
+        <div class="terminal-chrome">
+          <div class="terminal-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <span class="terminal-title">open-mechanic — /dev/ttyUSB0</span>
+        </div>
+        <div class="terminal-body" id="terminal-body">
+          <div class="terminal-output" id="terminal-output"></div>
+          <span class="terminal-cursor" id="terminal-cursor">&#x2588;</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section class="section how-it-works" id="how-it-works">
+    <div class="section-inner">
+      <h2 class="section-title">How It Works</h2>
+      <div class="steps-flow">
+        <div class="step">
+          <div class="step-icon">
+            <svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="14" y="8" width="20" height="32" rx="3"/>
+              <line x1="20" y1="16" x2="28" y2="16"/>
+              <line x1="20" y1="22" x2="28" y2="22"/>
+              <line x1="20" y1="28" x2="28" y2="28"/>
+              <circle cx="24" cy="35" r="2"/>
+              <path d="M8 24 L14 24" stroke-dasharray="2 2"/>
+              <path d="M34 24 L40 24" stroke-dasharray="2 2"/>
+            </svg>
+          </div>
+          <span class="step-number">01</span>
+          <h3>Plug In</h3>
+          <p>Connect an OBD-II USB adapter to your car's diagnostic port and your computer.</p>
+        </div>
+        <div class="step-connector" aria-hidden="true">
+          <svg viewBox="0 0 60 8" width="60" height="8" aria-hidden="true"><line x1="0" y1="4" x2="52" y2="4" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3"/><polygon points="52,0 60,4 52,8" fill="var(--accent)"/></svg>
+        </div>
+        <div class="step">
+          <div class="step-icon">
+            <svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M8 34 L14 24 L20 30 L26 18 L32 26 L38 14 L44 20"/>
+              <circle cx="14" cy="24" r="2" fill="var(--accent)"/>
+              <circle cx="26" cy="18" r="2" fill="var(--accent)"/>
+              <circle cx="38" cy="14" r="2" fill="var(--accent)"/>
+              <line x1="4" y1="40" x2="44" y2="40" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <span class="step-number">02</span>
+          <h3>Scan</h3>
+          <p>open-mechanic reads live sensor data and fault codes in real time.</p>
+        </div>
+        <div class="step-connector" aria-hidden="true">
+          <svg viewBox="0 0 60 8" width="60" height="8" aria-hidden="true"><line x1="0" y1="4" x2="52" y2="4" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 3"/><polygon points="52,0 60,4 52,8" fill="var(--accent)"/></svg>
+        </div>
+        <div class="step">
+          <div class="step-icon">
+            <svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="24" cy="22" r="14"/>
+              <path d="M16 18 Q20 10 24 18 Q28 26 32 18"/>
+              <path d="M16 26 Q20 18 24 26 Q28 34 32 26"/>
+              <line x1="24" y1="36" x2="24" y2="44"/>
+              <line x1="18" y1="44" x2="30" y2="44"/>
+            </svg>
+          </div>
+          <span class="step-number">03</span>
+          <h3>Diagnose</h3>
+          <p>Get plain-English diagnosis, severity rating, repair steps, and cost estimate.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FEATURES ============ -->
+  <section class="section features" id="features">
+    <div class="section-inner">
+      <h2 class="section-title">Features</h2>
+      <div class="features-grid">
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="16" cy="12" r="8"/>
+              <path d="M12 8 Q14 4 16 8 Q18 12 20 8"/>
+              <path d="M12 14 Q14 10 16 14 Q18 18 20 14"/>
+              <line x1="16" y1="20" x2="16" y2="28"/>
+              <line x1="12" y1="28" x2="20" y2="28"/>
+            </svg>
+          </div>
+          <h3>AI Diagnostics</h3>
+          <p>Plain-English explanations powered by the AI model of your choice.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="4" y="6" width="24" height="20" rx="2"/>
+              <line x1="4" y1="12" x2="28" y2="12"/>
+              <text x="16" y="24" text-anchor="middle" font-size="8" font-family="monospace" fill="var(--accent)" stroke="none">522</text>
+            </svg>
+          </div>
+          <h3>522 DTC Codes</h3>
+          <p>Offline fault code database. Works without internet.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 20 L8 14 L12 18 L16 8 L20 16 L24 12 L28 20"/>
+              <line x1="4" y1="26" x2="28" y2="26"/>
+              <circle cx="16" cy="8" r="2" fill="var(--accent)"/>
+            </svg>
+          </div>
+          <h3>Live Sensor Data</h3>
+          <p>RPM, temperature, O2, fuel trim, MAF, and more in real time.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="6" y="4" width="20" height="14" rx="2"/>
+              <line x1="6" y1="22" x2="26" y2="22"/>
+              <line x1="12" y1="18" x2="12" y2="22"/>
+              <line x1="20" y1="18" x2="20" y2="22"/>
+              <rect x="8" y="24" width="16" height="4" rx="1"/>
+            </svg>
+          </div>
+          <h3>Cross-Platform</h3>
+          <p>Linux, macOS, and Windows. Native adapters, no VM needed.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="8" y="10" width="16" height="16" rx="2"/>
+              <line x1="14" y1="10" x2="14" y2="6"/>
+              <line x1="18" y1="10" x2="18" y2="6"/>
+              <circle cx="12" cy="18" r="1.5" fill="var(--accent)"/>
+              <circle cx="16" cy="22" r="1.5" fill="var(--accent)"/>
+              <circle cx="20" cy="18" r="1.5" fill="var(--accent)"/>
+              <line x1="12" y1="18" x2="16" y2="22"/>
+              <line x1="16" y1="22" x2="20" y2="18"/>
+            </svg>
+          </div>
+          <h3>Self-Hostable</h3>
+          <p>Your data stays on your machine. No cloud dependency.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M16 4 L20 12 L28 13 L22 19 L23 28 L16 24 L9 28 L10 19 L4 13 L12 12 Z"/>
+            </svg>
+          </div>
+          <h3>Safety First</h3>
+          <p>DTC clearing requires explicit confirmation. AI output always includes informational disclaimer.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PLATFORMS ============ -->
+  <section class="section platforms" id="platforms">
+    <div class="section-inner">
+      <h2 class="section-title">Platform Support</h2>
+      <div class="platforms-grid">
+
+        <div class="platform-card">
+          <div class="platform-card-icon">
+            <svg viewBox="0 0 32 32" width="36" height="36" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="4" y="4" width="24" height="16" rx="2"/>
+              <line x1="4" y1="16" x2="28" y2="16"/>
+              <line x1="16" y1="20" x2="16" y2="26"/>
+              <line x1="10" y1="26" x2="22" y2="26"/>
+              <text x="16" y="13" text-anchor="middle" font-size="6" font-family="monospace" fill="var(--accent)" stroke="none">&gt;_</text>
+            </svg>
+          </div>
+          <h3>Linux</h3>
+          <div class="platform-cmd"><code>dmesg | grep ttyUSB</code></div>
+          <p>No extra drivers. OBDLink EX detected automatically as <code>/dev/ttyUSB0</code>.</p>
+          <span class="platform-status"><span class="pulse-dot"></span> Full support</span>
+        </div>
+
+        <div class="platform-card">
+          <div class="platform-card-icon">
+            <svg viewBox="0 0 32 32" width="36" height="36" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M16 4 C10 4 6 10 6 16 C6 22 10 28 16 28 C22 28 26 22 26 16 C26 10 22 4 16 4Z"/>
+              <path d="M12 10 C14 8 18 8 20 10"/>
+              <path d="M10 16 L22 16"/>
+              <circle cx="12" cy="20" r="1.5" fill="var(--accent)"/>
+              <circle cx="20" cy="20" r="1.5" fill="var(--accent)"/>
+            </svg>
+          </div>
+          <h3>macOS</h3>
+          <div class="platform-cmd"><code>ls /dev/cu.usbserial-*</code></div>
+          <p>FTDI VCP driver or native support on macOS 12+.</p>
+          <span class="platform-status"><span class="pulse-dot"></span> Full support</span>
+        </div>
+
+        <div class="platform-card">
+          <div class="platform-card-icon">
+            <svg viewBox="0 0 32 32" width="36" height="36" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="4" y="4" width="11" height="11" rx="1"/>
+              <rect x="17" y="4" width="11" height="11" rx="1"/>
+              <rect x="4" y="17" width="11" height="11" rx="1"/>
+              <rect x="17" y="17" width="11" height="11" rx="1"/>
+            </svg>
+          </div>
+          <h3>Windows</h3>
+          <div class="platform-cmd"><code>Device Manager → COM3</code></div>
+          <p>Set <code>OBD_PORT=COM3</code> in your <code>.env</code> file.</p>
+          <span class="platform-status"><span class="pulse-dot"></span> Full support</span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DIAGNOSTIC OUTPUT PREVIEW ============ -->
+  <section class="section output-preview">
+    <div class="section-inner">
+      <h2 class="section-title">Sample Diagnosis Output</h2>
+      <div class="output-panel">
+        <div class="terminal-chrome">
+          <div class="terminal-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <span class="terminal-title">DiagnosisResult — P0420</span>
+        </div>
+        <pre class="output-json"><code>{
+  <span class="json-key">"severity"</span>: <span class="json-string">"warning"</span>,
+  <span class="json-key">"summary"</span>: <span class="json-string">"Catalytic converter efficiency below threshold on bank 1"</span>,
+  <span class="json-key">"likely_causes"</span>: [
+    <span class="json-string">"Aged catalytic converter"</span>,
+    <span class="json-string">"Rich fuel mixture causing catalyst damage"</span>,
+    <span class="json-string">"Upstream O2 sensor fault skewing readings"</span>
+  ],
+  <span class="json-key">"repair_steps"</span>: [
+    <span class="json-string">"Inspect upstream and downstream O2 sensors for correct waveform"</span>,
+    <span class="json-string">"Check for exhaust leaks before the catalytic converter"</span>,
+    <span class="json-string">"Test catalytic converter efficiency with a scan tool"</span>,
+    <span class="json-string">"Replace catalytic converter if efficiency confirmed below spec"</span>
+  ],
+  <span class="json-key">"estimated_cost_usd"</span>: { <span class="json-key">"low"</span>: <span class="json-number">150</span>, <span class="json-key">"high"</span>: <span class="json-number">1200</span> },
+  <span class="json-key">"diy_feasible"</span>: <span class="json-bool">false</span>,
+  <span class="json-key">"diy_difficulty"</span>: <span class="json-string">"hard"</span>,
+  <span class="json-key">"urgency"</span>: <span class="json-string">"soon"</span>,
+  <span class="json-key">"disclaimer"</span>: <span class="json-string">"This diagnosis is informational only and does not constitute professional mechanical advice."</span>
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <svg class="logo-icon" viewBox="0 0 512 512" width="24" height="24" aria-hidden="true">
+          <circle cx="256" cy="256" r="256" fill="var(--bg)"/>
+          <path d="M152 200 L360 200 L340 312 L172 312 Z" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linejoin="round"/>
+          <circle cx="200" cy="236" r="8" fill="var(--accent)"/>
+          <circle cx="264" cy="236" r="8" fill="var(--accent)"/>
+          <circle cx="328" cy="236" r="8" fill="var(--accent)"/>
+          <circle cx="224" cy="276" r="8" fill="var(--accent)"/>
+          <circle cx="288" cy="276" r="8" fill="var(--accent)"/>
+        </svg>
+        <span class="footer-tagline">Open-source AI-powered car diagnostics</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/speed785/open-mechanic" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/speed785/open-mechanic/tree/main/docs" target="_blank" rel="noopener">Docs</a>
+        <a href="https://github.com/speed785/open-mechanic/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing</a>
+        <a href="https://github.com/speed785/open-mechanic/issues" target="_blank" rel="noopener">Issues</a>
+      </div>
+      <div class="footer-meta">
+        <p>MIT License &middot; Built with Python, Claude, and a real OBD-II adapter</p>
+        <p class="footer-disclaimer">&#x26A0;&#xFE0F; All diagnostics are informational only. Consult a qualified mechanic for safety-critical repairs.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>
