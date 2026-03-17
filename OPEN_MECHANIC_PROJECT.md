@@ -9,9 +9,9 @@
 **open-mechanic** is an open-source, AI-powered car diagnostics platform. The core idea:
 
 1. Plug an OBD-II USB adapter into the car's OBD-II port
-2. Connect the adapter to a Linux computer via USB
+2. Connect the adapter to a computer via USB (Linux, macOS, or Windows)
 3. Read live sensor data + fault/DTC codes using `python-obd`
-4. Feed that data to an AI model (Claude API) with vehicle context
+4. Feed that data to an AI model of your choice with vehicle context
 5. Return plain-English diagnosis, severity rating, repair steps, and estimated cost
 6. Eventually: web UI, community repair database, optional paid SaaS tier
 
@@ -23,7 +23,7 @@
 
 **Adapter chosen: OBDLink EX** (~$35 on Amazon)
 
-- Uses FTDI chip → works on Linux out of the box, shows up as `/dev/ttyUSB0`
+- Uses FTDI chip → works on Linux (`/dev/ttyUSB0`), macOS (`/dev/cu.usbserial-*`), and Windows (`COM3`) out of the box
 - Designed for FORScan (Windows), but the underlying serial protocol works everywhere
 - Supports Ford MS-CAN + HS-CAN (deep Ford/Lincoln/Mercury/Mazda access)
 - Also works as a standard OBD-II adapter for all 1996+ vehicles
@@ -96,7 +96,7 @@ connection.query(obd.commands.CLEAR_DTC)
 ### Phase 1 — Foundation (Week 1–2)
 **Goal**: Prove the hardware→software connection works end-to-end
 
-- [ ] Buy OBDLink EX, plug into car via Linux, confirm `/dev/ttyUSB0` appears
+- [ ] Buy OBDLink EX, plug into car and computer, confirm adapter is detected (see platform setup docs)
 - [ ] Install `python-obd`, write a script that reads live sensor data
 - [ ] Pull and decode DTC fault codes from the car
 - [ ] Log sensor data to SQLite with timestamps
@@ -111,7 +111,7 @@ connection.query(obd.commands.CLEAR_DTC)
 ### Phase 2 — AI Diagnostics Layer (Week 3–4)
 **Goal**: Turn raw DTC codes into useful, plain-English guidance
 
-- [ ] Set up Claude API integration
+- [ ] Set up AI API integration
 - [ ] Build prompt template that includes: make/model/year/mileage + DTC codes + live sensor snapshot
 - [ ] Return structured JSON: `{ severity, diagnosis, likely_cause, repair_steps[], estimated_cost, diy_feasible }`
 - [ ] Add severity classification: info / warning / critical / don't-drive
@@ -176,7 +176,7 @@ GET  /api/guides/{dtc}     — repair guide for a specific code
 |-------------|----------------------------------------|
 | Hardware    | OBDLink EX USB adapter                 |
 | OBD Reading | `python-obd`, `pyserial`               |
-| AI/LLM      | Claude API (claude-sonnet model)       |
+| AI/LLM      | Pluggable AI backend (Claude, OpenAI, and more) |
 | Backend     | Python + FastAPI                       |
 | Frontend    | React + TailwindCSS                    |
 | Database    | SQLite (dev) → PostgreSQL (prod)       |
@@ -278,4 +278,4 @@ The human is technically proficient (works with AI agent orchestration, GitHub w
 
 ## Chat Origin
 
-This project context was generated from a planning conversation with Claude (claude.ai) on March 16, 2026. The conversation covered: project viability, OBD-II adapter selection (OBDLink EX chosen), Linux compatibility confirmation, competitive analysis, business model options, and phase planning.
+This project context was generated from a planning conversation with Claude (claude.ai) on March 16, 2026. The conversation covered: project viability, OBD-II adapter selection (OBDLink EX chosen), cross-platform compatibility (Linux/macOS/Windows), competitive analysis, business model options, and phase planning.

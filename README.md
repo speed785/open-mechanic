@@ -1,6 +1,6 @@
 # open-mechanic
 
-> Open-source AI-powered car diagnostics. Plug in an OBD-II USB adapter, read live sensor data and fault codes, get plain-English diagnosis and step-by-step repair guides — all from your Linux machine.
+> Open-source AI-powered car diagnostics. Plug in an OBD-II USB adapter, read live sensor data and fault codes, get plain-English diagnosis and step-by-step repair guides — on Linux, macOS, or Windows.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -11,9 +11,9 @@
 ## What It Does
 
 1. Plug an OBD-II USB adapter into your car's OBD-II port
-2. Connect the adapter to your Linux machine via USB
+2. Connect the adapter to your computer via USB (Linux, macOS, or Windows)
 3. `open-mechanic` reads live sensor data + fault codes using `python-obd`
-4. Feeds that data to Claude AI with your vehicle's context
+4. Feeds that data to an AI model of your choice with your vehicle's context
 5. Returns plain-English diagnosis, severity rating, repair steps, and estimated cost
 
 **Target users**: Car owners who want real visibility into their vehicle without paying dealer diagnostic fees.
@@ -35,7 +35,7 @@
 
 **Recommended: [OBDLink EX USB](https://www.obdlink.com/products/obdlink-ex/)** (~$35)
 
-- FTDI chip → works on Linux out of the box as `/dev/ttyUSB0` (no extra drivers needed)
+- FTDI chip → works on Linux out of the box (`/dev/ttyUSB0`), macOS (`/dev/cu.usbserial-*`), and Windows (`COM3`) — see [platform setup docs](docs/)
 - Supports Ford MS-CAN + HS-CAN for deep Ford/Lincoln/Mercury/Mazda access
 - 20× faster throughput than generic ELM327 clones
 - Works as standard OBD-II adapter for **all 1996+ vehicles**
@@ -61,7 +61,7 @@ git clone https://github.com/yourusername/open-mechanic
 cd open-mechanic
 pip install -e ".[dev]"
 
-# Set your Claude API key
+# Set your AI API key
 cp .env.example .env
 # Edit .env and add: ANTHROPIC_API_KEY=your_key_here
 
@@ -106,7 +106,7 @@ open-mechanic diagnose --vehicle "2018 Ford F-150" --mileage 85000
 |-------|-----------|
 | Hardware | OBDLink EX USB adapter |
 | OBD Reading | `python-obd`, `pyserial` |
-| AI/LLM | Claude API (Anthropic) |
+| AI/LLM | Pluggable AI backend (Claude, OpenAI, and more) |
 | Backend | Python + FastAPI |
 | Frontend | React + TailwindCSS *(Phase 3)* |
 | Database | SQLite → PostgreSQL |
@@ -122,7 +122,7 @@ open-mechanic diagnose --vehicle "2018 Ford F-150" --mileage 85000
 OBD-II connection management · Live sensor polling · DTC fault code reading + decoding · SQLite session logging
 
 ### 🔄 Phase 2 — AI Diagnostics *(Week 3–4)*
-Claude API integration · Structured JSON diagnostic output · Local DTC code cache
+AI API integration · Structured JSON diagnostic output · Local DTC code cache
 
 ### 📋 Phase 3 — Interface *(Month 2)*
 Rich CLI with color-coded severity · FastAPI REST backend · React dashboard + repair guide viewer · Maintenance timeline tracker
