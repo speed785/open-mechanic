@@ -97,12 +97,16 @@ Edit `.env`:
 # Required
 ANTHROPIC_API_KEY=sk-ant-...your-key-here...
 
-# Optional — leave blank to auto-detect /dev/cu.usbserial-*
-# Set explicitly if auto-detection fails:
-# OBD_PORT=/dev/cu.usbserial-A50285BI
-OBD_PORT=
-OBD_BAUDRATE=
+# OBD adapter settings
+OBD_PORT=                  # leave blank to auto-detect /dev/cu.usbserial-*
+                           # Set explicitly if auto-detection fails:
+                           # OBD_PORT=/dev/cu.usbserial-A50285BI
+OBD_BAUDRATE=              # leave blank (auto-detected)
+OBD_PROTOCOL=6             # 6 = ISO 15765-4 CAN 11/500 (most 2008+ cars)
+                           # Remove or leave blank to auto-detect (slower, ~30s)
 ```
+
+> **Why `OBD_PROTOCOL=6`?** Auto-detection tries every OBD protocol sequentially and can take 30+ seconds or time out entirely. Protocol 6 (ISO 15765-4 CAN 11/500) covers the vast majority of cars made after 2008. If your car is older or doesn't respond, remove this line to fall back to auto-detection.
 
 Get a Claude API key at: https://console.anthropic.com/
 
@@ -110,7 +114,7 @@ Get a Claude API key at: https://console.anthropic.com/
 
 ## Test the OBD Connection
 
-With your adapter plugged into the car's OBD-II port and the car's ignition on:
+With your adapter plugged into the car's OBD-II port and the engine running:
 
 ```bash
 python scripts/test_connection.py
@@ -119,12 +123,29 @@ python scripts/test_connection.py
 Expected output:
 
 ```
-Connecting to OBD adapter...
-Connected: True
-Protocol: ELM327 v1.5 / ISO 15765-4 (CAN 11/500)
-RPM: 0 rpm
-Coolant Temp: 85 °C
-...
+╭─────────────────────────────────────────────────╮
+│  open-mechanic — OBD-II Adapter Test            │
+│  Version 0.1.0  •  2026-03-18 19:16:35         │
+╰─────────────────────────────────────────────────╯
+
+✓ Connected  ISO 15765-4 (CAN 11/500)  on /dev/cu.usbserial-A50285BI
+
+Adapter supports 110 commands
+
+┌─────────────────────────┬────────┬────────────────────────┬───────────┐
+│ Sensor                  │  Value │ Unit                   │ Supported │
+├─────────────────────────┼────────┼────────────────────────┼───────────┤
+│ Engine RPM              │ 754.75 │ revolutions_per_minute │     ✓     │
+│ Vehicle Speed           │   0.00 │ kilometer_per_hour     │     ✓     │
+│ Coolant Temp            │  98.00 │ degree_Celsius         │     ✓     │
+│ Throttle Position       │   9.80 │ percent                │     ✓     │
+│ Engine Load             │  26.67 │ percent                │     ✓     │
+│ Control Module Voltage  │  14.83 │ volt                   │     ✓     │
+└─────────────────────────┴────────┴────────────────────────┴───────────┘
+
+✓ No fault codes
+
+Completed in 2.55s
 ```
 
 ---
@@ -167,3 +188,14 @@ OBD_PORT=/dev/cu.usbserial-A50285BI
 - Make sure the car's ignition is in the "on" position
 - Some PIDs are not supported by all vehicles — this is normal
 - Try: `python -c "import obd; c = obd.OBD(); print(c.query(obd.commands.ELM_VERSION))"`
+
+### Connection hangs or times out (never shows "Connected")
+
+The most common cause is OBD protocol auto-detection timing out. Fix:
+
+1. Add `OBD_PROTOCOL=6` to your `.env` file (covers most 2008+ cars)
+2. Make sure the **engine is running** — ignition-only is sometimes not enough
+3. Try: `python scripts/test_connection.py --protocol 6`
+
+If protocol 6 doesn't work, try protocols 3–9 (different CAN variants). See the
+[python-obd protocol list](https://python-obd.readthedocs.io/en/latest/Connections/) for details.

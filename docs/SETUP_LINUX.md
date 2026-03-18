@@ -41,6 +41,8 @@ Plug in the adapter, then check it was detected:
 dmesg | grep ttyUSB
 ```
 
+> **Note**: On some systems `dmesg` requires sudo. If you get "Operation not permitted", use `ls -la /dev/ttyUSB0` instead to confirm the adapter is detected.
+
 Expected output:
 
 ```
@@ -64,7 +66,15 @@ By default, `/dev/ttyUSB0` is owned by the `dialout` group. Add your user to tha
 sudo usermod -a -G dialout $USER
 ```
 
-**You must log out and log back in** (or reboot) for the group change to take effect.
+**You must log out and log back in** for the group change to take effect.
+
+**Shortcut** — to apply immediately in the current terminal without logging out:
+
+```bash
+newgrp dialout
+```
+
+Then run the test script in that same terminal window.
 
 Verify you're in the group after re-login:
 
@@ -88,10 +98,14 @@ Edit `.env`:
 # Required
 ANTHROPIC_API_KEY=sk-ant-...your-key-here...
 
-# Optional — leave blank to auto-detect /dev/ttyUSB0
-OBD_PORT=
-OBD_BAUDRATE=
+# OBD adapter settings
+OBD_PORT=                  # leave blank to auto-detect /dev/ttyUSB0
+OBD_BAUDRATE=              # leave blank (auto-detected as 115200 for OBDLink EX)
+OBD_PROTOCOL=6             # 6 = ISO 15765-4 CAN 11/500 (most 2008+ cars)
+                           # Remove or leave blank to auto-detect (slower, ~30s)
 ```
+
+> **Why `OBD_PROTOCOL=6`?** Auto-detection tries every OBD protocol sequentially and can take 30+ seconds or time out entirely. Protocol 6 (ISO 15765-4 CAN 11/500) covers the vast majority of cars made after 2008. If your car is older or doesn't respond, remove this line to fall back to auto-detection.
 
 Get a Claude API key at: https://console.anthropic.com/
 
@@ -99,22 +113,39 @@ Get a Claude API key at: https://console.anthropic.com/
 
 ## Test the OBD Connection
 
-With your adapter plugged into the car's OBD-II port and the car's ignition on (key to "on" position, engine not required):
+With your adapter plugged into the car's OBD-II port and the engine running:
 
 ```bash
+# With engine running and adapter plugged into OBD-II port:
 python scripts/test_connection.py
 ```
 
 Expected output:
 
 ```
-Connecting to OBD adapter...
-Connected: True
-Protocol: ELM327 v1.5 / ISO 15765-4 (CAN 11/500)
-RPM: 0 rpm
-Coolant Temp: 85 °C
-Vehicle Speed: 0 kph
-...
+╭─────────────────────────────────────────────────╮
+│  open-mechanic — OBD-II Adapter Test            │
+│  Version 0.1.0  •  2026-03-18 19:16:35         │
+╰─────────────────────────────────────────────────╯
+
+✓ Connected  ISO 15765-4 (CAN 11/500)  on /dev/ttyUSB0
+
+Adapter supports 110 commands
+
+┌─────────────────────────┬────────┬────────────────────────┬───────────┐
+│ Sensor                  │  Value │ Unit                   │ Supported │
+├─────────────────────────┼────────┼────────────────────────┼───────────┤
+│ Engine RPM              │ 754.75 │ revolutions_per_minute │     ✓     │
+│ Vehicle Speed           │   0.00 │ kilometer_per_hour     │     ✓     │
+│ Coolant Temp            │  98.00 │ degree_Celsius         │     ✓     │
+│ Throttle Position       │   9.80 │ percent                │     ✓     │
+│ Engine Load             │  26.67 │ percent                │     ✓     │
+│ Control Module Voltage  │  14.83 │ volt                   │     ✓     │
+└─────────────────────────┴────────┴────────────────────────┴───────────┘
+
+✓ No fault codes
+
+Completed in 2.55s
 ```
 
 ---
@@ -156,3 +187,14 @@ sudo chmod a+rw /dev/ttyUSB0
 ### Multiple USB serial devices
 
 If you have other USB serial devices (Arduino, GPS, etc.), the OBDLink may appear as `ttyUSB1` or `ttyUSB2`. Set `OBD_PORT=/dev/ttyUSBX` in `.env` to pin it.
+
+### Connection hangs or times out (never shows "Connected")
+
+The most common cause is OBD protocol auto-detection timing out. Fix:
+
+1. Add `OBD_PROTOCOL=6` to your `.env` file (covers most 2008+ cars)
+2. Make sure the **engine is running** — ignition-only is sometimes not enough
+3. Try: `python scripts/test_connection.py --protocol 6`
+
+If protocol 6 doesn't work, try protocols 3–9 (different CAN variants). See the
+[python-obd protocol list](https://python-obd.readthedocs.io/en/latest/Connections/) for details.

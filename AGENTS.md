@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-**open-mechanic** is an open-source, AI-powered OBD-II car diagnostics platform. It reads live sensor data and fault codes from a vehicle via a USB OBD-II adapter, feeds that data to Claude AI with vehicle context, and returns plain-English diagnosis, severity ratings, repair steps, and cost estimates. Target users are car owners who want real diagnostic visibility without paying dealer fees.
+**open-mechanic** is an open-source, AI-powered OBD-II car diagnostics platform. It reads live sensor data and fault codes from a vehicle via a USB OBD-II adapter, feeds that data to an AI model of your choice with vehicle context, and returns plain-English diagnosis, severity ratings, repair steps, and cost estimates. Target users are car owners who want real diagnostic visibility without paying dealer fees.
 
 ---
 
@@ -14,12 +14,13 @@
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| Phase 1 — Foundation | IN PROGRESS | Scaffolding not yet created |
-| Phase 2 — AI Diagnostics | PENDING | Depends on Phase 1 |
-| Phase 3 — Interface | FUTURE | CLI, FastAPI, React dashboard |
+| Phase 1 — Foundation | ✅ COMPLETE | OBD connection, sensor polling, DTC reading, SQLite logging |
+| Phase 2 — AI Diagnostics | ✅ COMPLETE | Claude API integration, JSON output, 24h cache, disclaimer |
+| Phase 3 — Interface | PENDING | CLI, FastAPI, React dashboard |
 | Phase 4 — Community | FUTURE | Public release, community DTC DB |
 
-The repo currently has: README, project context docs, GitHub infrastructure. No Python source files yet.
+Phase 1 and Phase 2 are fully implemented and tested on a real vehicle (2026-03-18).
+Confirmed working: ISO 15765-4 CAN 11/500 protocol, OBDLink EX on `/dev/ttyUSB0` at 115200 baud.
 
 ---
 
@@ -31,9 +32,9 @@ open-mechanic/
 ├── CONTRIBUTING.md
 ├── AGENTS.md
 ├── LICENSE                        (MIT)
-├── pyproject.toml                 (Phase 1 — not yet created)
-├── .env.example                   (Phase 1 — not yet created)
-├── .gitignore                     (Phase 1 — not yet created)
+├── pyproject.toml
+├── .env.example
+├── .gitignore
 │
 ├── src/
 │   └── open_mechanic/             (package name: open_mechanic, underscore)
@@ -57,9 +58,9 @@ open-mechanic/
 │   └── seed_dtc_db.py             Populate local DTC database
 │
 ├── data/
-│   └── dtc_codes.json             Offline DTC reference database (150+ codes)
+│   └── dtc_codes.json             Offline DTC reference database (522 codes)
 │
-├── tests/                         (Phase 1 — not yet created)
+├── tests/
 │
 ├── docs/
 │   ├── SETUP_LINUX.md
@@ -174,7 +175,7 @@ cp .env.example .env
 # Edit .env: set ANTHROPIC_API_KEY
 
 python scripts/test_connection.py
-open-mechanic diagnose --vehicle "2018 Ford F-150" --mileage 85000
+# If connection hangs, add: --protocol 6  (ISO 15765-4 CAN, most 2008+ cars)
 ```
 
 ---
@@ -197,6 +198,7 @@ All configured in `.env` (copy from `.env.example`):
 | `ANTHROPIC_MODEL` | No | `claude-sonnet-4-5` | Claude model to use |
 | `OBD_PORT` | No | platform default | Override OBD port (e.g. `COM3`, `/dev/ttyUSB0`) |
 | `OBD_BAUDRATE` | No | auto | Serial baudrate |
+| `OBD_PROTOCOL` | No | auto | OBD protocol number. Set `6` for ISO 15765-4 CAN 11/500 (most 2008+ cars). Skips slow auto-detection. |
 | `DB_PATH` | No | `data/sessions.db` | SQLite database path |
 
 ---
@@ -211,3 +213,4 @@ All configured in `.env` (copy from `.env.example`):
 - Do not import from `open_mechanic` in `scripts/test_connection.py` (it's a standalone script)
 - Do not add EV/Hybrid-specific logic in Phase 1-2
 - Do not use merge commits or rebase merges (squash-merge only repo)
+- Do not rely on OBD protocol auto-detection in production — always set OBD_PROTOCOL in .env

@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Status: Building](https://img.shields.io/badge/status-building-orange.svg)]()
+[![Phase 1+2: Complete](https://img.shields.io/badge/phase%201%2B2-complete-brightgreen.svg)]()
 
 ---
 
@@ -65,11 +65,12 @@ pip install -e ".[dev]"
 cp .env.example .env
 # Edit .env and add: ANTHROPIC_API_KEY=your_key_here
 
-# Test your OBD adapter
+# Test your OBD adapter (engine running, adapter plugged into OBD-II port)
 python scripts/test_connection.py
+# Tip: if connection hangs, your car likely uses CAN — add OBD_PROTOCOL=6 to .env
 
-# Run a diagnosis
-open-mechanic diagnose --vehicle "2018 Ford F-150" --mileage 85000
+# AI diagnosis (Phase 3 CLI — coming soon)
+# For now, use the Python API directly — see docs/
 ```
 
 ---
@@ -121,7 +122,7 @@ open-mechanic diagnose --vehicle "2018 Ford F-150" --mileage 85000
 ### ✅ Phase 1 — Foundation *(Week 1–2)*
 OBD-II connection management · Live sensor polling · DTC fault code reading + decoding · SQLite session logging
 
-### 🔄 Phase 2 — AI Diagnostics *(Week 3–4)*
+### ✅ Phase 2 — AI Diagnostics *(Week 3–4)*
 AI API integration · Structured JSON diagnostic output · Local DTC code cache
 
 ### 📋 Phase 3 — Interface *(Month 2)*
