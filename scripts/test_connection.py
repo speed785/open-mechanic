@@ -17,6 +17,7 @@ import argparse
 import glob
 import json
 import logging
+import os
 import platform
 import sys
 import time
@@ -147,6 +148,16 @@ def parse_args() -> argparse.Namespace:
         default=10.0,
         help="Connection timeout in seconds (default: 10).",
     )
+    parser.add_argument(
+        "--protocol",
+        metavar="PROTOCOL",
+        default=None,
+        help=(
+            "OBD protocol number (default: auto-detect). "
+            "Use 6 for ISO 15765-4 CAN 11/500 (most 2008+ cars). "
+            "Auto-detect works but takes ~30s."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -189,6 +200,11 @@ def main() -> int:
         f"[bold]{port_to_use}[/bold]" + (" [dim](--port override)[/dim]" if args.port else ""),
     )
     sys_table.add_row("Timeout", f"{args.timeout:.0f}s")
+    protocol_to_use: str | None = args.protocol or os.getenv("OBD_PROTOCOL") or None
+    sys_table.add_row(
+        "Protocol",
+        protocol_to_use if protocol_to_use else "[dim]auto-detect[/dim]",
+    )
 
     console.print(Panel(sys_table, title="[bold]System Info[/bold]", border_style="blue"))
     console.print()
@@ -206,6 +222,8 @@ def main() -> int:
         try:
             connection = obd.OBD(
                 portstr=port_to_use,
+                baudrate=115200,
+                protocol=protocol_to_use,
                 timeout=args.timeout,
                 check_voltage=False,
             )
@@ -246,7 +264,7 @@ def main() -> int:
 
 
 def _show_connected(console: Console, connection: obd.OBD) -> None:
-    supported_count = len(connection.supportedCommands)
+    supported_count = len(connection.supported_commands)
     console.print(f"[bold]Adapter supports[/bold] [cyan]{supported_count}[/cyan] commands")
     console.print()
 
@@ -273,7 +291,7 @@ def _show_connected(console: Console, connection: obd.OBD) -> None:
         cmd = getattr(obd.commands, cmd_name)
 
         # Check if adapter supports this command
-        if cmd not in connection.supportedCommands:
+        if cmd not in connection.supported_commands:
             sensor_table.add_row(label, "[dim]N/A[/dim]", "", "[yellow]✗[/yellow]")
             continue
 
@@ -311,7 +329,7 @@ def _show_connected(console: Console, connection: obd.OBD) -> None:
     dtc_db = load_dtc_db()
     dtcs: list[tuple[str, str]] = []
 
-    if hasattr(obd.commands, "GET_DTC") and obd.commands.GET_DTC in connection.supportedCommands:
+    if hasattr(obd.commands, "GET_DTC") and obd.commands.GET_DTC in connection.supported_commands:
         try:
             response = connection.query(obd.commands.GET_DTC)
             if response is not None and not response.is_null() and response.value:

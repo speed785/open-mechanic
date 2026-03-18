@@ -65,6 +65,7 @@ class OBDConnection:
         self,
         port: str | None = None,
         baudrate: int | None = None,
+        protocol: str | None = None,
         timeout: float = 30.0,
         max_retries: int = 3,
     ) -> None:
@@ -74,10 +75,18 @@ class OBDConnection:
             port or env_port or (scanned_ports[0] if scanned_ports else get_default_port())
         )
 
+        # Protocol: explicit arg > OBD_PROTOCOL env var > None (auto-detect)
+        # Common values: "6" = ISO 15765-4 CAN 11/500 (most modern cars)
+        # Auto-detect works but can be slow (~30s). Set OBD_PROTOCOL=6 in .env
+        # to connect instantly if your car uses CAN.
+        env_protocol = os.getenv("OBD_PROTOCOL")
+        resolved_protocol = protocol or env_protocol or None
+
         self._connection: obd.OBD | None = None
         self._status: ConnectionStatus = ConnectionStatus.DISCONNECTED
         self._port: str = resolved_port
         self._baudrate: int | None = baudrate
+        self._protocol: str | None = resolved_protocol
         self._timeout: float = timeout
         self._max_retries: int = max_retries
         self._platform: str = platform.system()
@@ -95,6 +104,7 @@ class OBDConnection:
                 connection = obd.OBD(
                     portstr=self._port,
                     baudrate=self._baudrate or 0,
+                    protocol=self._protocol,
                     timeout=self._timeout,
                     check_voltage=False,
                 )
