@@ -106,4 +106,25 @@ jobs:
           if [ -f "pyproject.toml" ]; then pip install -e ".[dev]"; else pip install pytest; fi
 
       - name: Run pytest
-        run: pytest tests/ -v --tb=short || true
+        run: pytest tests/ -v --tb=short
+
+  website:
+    name: Website (typecheck + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install website dependencies
+        working-directory: website
+        run: npm ci
+
+      - name: Run website build
+        working-directory: website
+        run: npm run build

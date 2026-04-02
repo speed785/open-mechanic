@@ -19,7 +19,6 @@ import sys
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
@@ -29,17 +28,21 @@ from rich.text import Text
 
 from open_mechanic.ai.diagnose import DiagnosisResult, DiagnosticEngine, DiagnosticError
 from open_mechanic.connection import OBDConnection
+from open_mechanic.db.models import VehicleProfile
 from open_mechanic.dtc import DTCCode, DTCReader
 from open_mechanic.reader import SensorPoller, SensorValue
 
 
 @dataclass
-class _Vehicle:
-    year: int
-    make: str
-    model: str
+class _Args:
+    vehicle: str
     mileage: int
-    vin: str | None = None
+    vin: str | None
+    port: str | None
+    protocol: str | None
+    model: str | None
+    no_cache: bool
+
 
 logging.getLogger("obd").setLevel(logging.CRITICAL)
 logging.getLogger("open_mechanic").setLevel(logging.CRITICAL)
@@ -70,7 +73,38 @@ _SEVERITY_STYLES: dict[str, tuple[str, str]] = {
 }
 
 
-def _parse_args() -> argparse.Namespace:
+def _require_str(value: object, name: str) -> str:
+    if isinstance(value, str):
+        return value
+    msg = f"Invalid argument type for {name}: expected str"
+    raise TypeError(msg)
+
+
+def _require_optional_str(value: object, name: str) -> str | None:
+    if value is None or isinstance(value, str):
+        return value
+    msg = f"Invalid argument type for {name}: expected str | None"
+    raise TypeError(msg)
+
+
+def _require_int(value: object, name: str) -> int:
+    if isinstance(value, bool):
+        msg = f"Invalid argument type for {name}: expected int"
+        raise TypeError(msg)
+    if isinstance(value, int):
+        return value
+    msg = f"Invalid argument type for {name}: expected int"
+    raise TypeError(msg)
+
+
+def _require_bool(value: object, name: str) -> bool:
+    if isinstance(value, bool):
+        return value
+    msg = f"Invalid argument type for {name}: expected bool"
+    raise TypeError(msg)
+
+
+def _parse_args() -> _Args:
     parser = argparse.ArgumentParser(
         prog="diagnose.py",
         description=(
@@ -80,32 +114,32 @@ def _parse_args() -> argparse.Namespace:
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--vehicle",
         metavar="DESCRIPTION",
         required=True,
         help='Vehicle description e.g. "2018 Ford F-150" (format: YEAR MAKE MODEL)',
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--mileage",
         metavar="MILES",
         type=int,
         required=True,
         help="Current odometer reading in miles",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--vin",
         metavar="VIN",
         default=None,
         help="VIN number (optional)",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--port",
         metavar="PORT",
         default=None,
         help="OBD port override (default: from OBD_PORT env or auto-detect)",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--protocol",
         metavar="PROTOCOL",
         default=None,
@@ -114,18 +148,27 @@ def _parse_args() -> argparse.Namespace:
             "Use 6 for ISO 15765-4 CAN 11/500 (most 2008+ cars)."
         ),
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--model",
         metavar="MODEL",
         default=None,
         help="AI model override (default: from ANTHROPIC_MODEL env)",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--no-cache",
         action="store_true",
         help="Bypass the 24h result cache",
     )
-    return parser.parse_args()
+    parsed = vars(parser.parse_args())
+    return _Args(
+        vehicle=_require_str(parsed.get("vehicle"), "vehicle"),
+        mileage=_require_int(parsed.get("mileage"), "mileage"),
+        vin=_require_optional_str(parsed.get("vin"), "vin"),
+        port=_require_optional_str(parsed.get("port"), "port"),
+        protocol=_require_optional_str(parsed.get("protocol"), "protocol"),
+        model=_require_optional_str(parsed.get("model"), "model"),
+        no_cache=_require_bool(parsed.get("no_cache"), "no_cache"),
+    )
 
 
 def _parse_vehicle(vehicle_str: str, console: Console) -> tuple[int, str, str] | None:
@@ -135,21 +178,23 @@ def _parse_vehicle(vehicle_str: str, console: Console) -> tuple[int, str, str] |
     """
     parts = vehicle_str.strip().split(maxsplit=2)
     if len(parts) < 3:
-        console.print(
-            f"[bold red]✗ Error:[/bold red] --vehicle must be 'YEAR MAKE MODEL', "
-            f"got: [yellow]{vehicle_str!r}[/yellow]\n"
-            '[dim]Example: --vehicle "2018 Ford F-150"[/dim]'
+        message = (
+            "[bold red]✗ Error:[/bold red] --vehicle must be 'YEAR MAKE MODEL', got: "
+            + f"[yellow]{vehicle_str!r}[/yellow]\n"
+            + '[dim]Example: --vehicle "2018 Ford F-150"[/dim]'
         )
+        console.print(message)
         return None
 
     try:
         year = int(parts[0])
     except ValueError:
-        console.print(
-            f"[bold red]✗ Error:[/bold red] First part of --vehicle must be a year (number), "
-            f"got: [yellow]{parts[0]!r}[/yellow]\n"
-            '[dim]Example: --vehicle "2018 Ford F-150"[/dim]'
+        message = (
+            "[bold red]✗ Error:[/bold red] First part of --vehicle must be a year "
+            + f"(number), got: [yellow]{parts[0]!r}[/yellow]\n"
+            + '[dim]Example: --vehicle "2018 Ford F-150"[/dim]'
         )
+        console.print(message)
         return None
 
     return year, parts[1], parts[2]
@@ -161,8 +206,8 @@ def _build_vehicle(
     model_name: str,
     mileage: int,
     vin: str | None,
-) -> _Vehicle:
-    return _Vehicle(year=year, make=make, model=model_name, mileage=mileage, vin=vin)
+) -> VehicleProfile:
+    return VehicleProfile(year=year, make=make, model=model_name, mileage=mileage, vin=vin)
 
 
 def _show_sensors(console: Console, snapshot: dict[str, SensorValue]) -> None:
@@ -230,9 +275,9 @@ def _show_diagnosis(
         panel_border = "dim"
 
     header = Text()
-    header.append(f"Diagnosis: {vehicle_str} ({mileage:,} miles)\n", style="bold white")
-    header.append("Severity: ", style="bold")
-    header.append(severity_label, style=border_style)
+    _ = header.append(f"Diagnosis: {vehicle_str} ({mileage:,} miles)\n", style="bold white")
+    _ = header.append("Severity: ", style="bold")
+    _ = header.append(severity_label, style=border_style)
     console.print(Panel(header, border_style=panel_border, padding=(0, 2)))
     console.print()
 
@@ -277,9 +322,9 @@ def main() -> int:  # noqa: PLR0911
     # ── Header ──────────────────────────────────────────────────────────────
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     header_text = Text()
-    header_text.append("open-mechanic", style="bold cyan")
-    header_text.append(" — AI Diagnosis\n", style="bold white")
-    header_text.append(f"Version {VERSION}  •  {timestamp}", style="dim")
+    _ = header_text.append("open-mechanic", style="bold cyan")
+    _ = header_text.append(" — AI Diagnosis\n", style="bold white")
+    _ = header_text.append(f"Version {VERSION}  •  {timestamp}", style="dim")
     console.print(Panel(header_text, border_style="cyan", padding=(0, 2)))
     console.print()
 
@@ -313,17 +358,17 @@ def main() -> int:  # noqa: PLR0911
         protocol_name = raw_conn.protocol_name() if raw_conn is not None else "Unknown"
         console.print(
             f"[bold green]✓ Connected[/bold green]  [dim]{protocol_name}[/dim]  "
-            f"[dim]on {obd_connection.get_port()}[/dim]"
+            + f"[dim]on {obd_connection.get_port()}[/dim]"
         )
     else:
         console.print(
             "[bold yellow]⚠ No OBD adapter found[/bold yellow]  "
-            "[dim]Running in offline mode — diagnosis based on vehicle info only[/dim]"
+            + "[dim]Running in offline mode — diagnosis based on vehicle info only[/dim]"
         )
     console.print()
 
     # ── Sensors and DTCs ─────────────────────────────────────────────────────
-    snapshot: dict[str, Any] = {}
+    snapshot: dict[str, object] = {}
     dtcs: list[DTCCode] = []
 
     if connected:
@@ -336,7 +381,7 @@ def main() -> int:  # noqa: PLR0911
             _ = progress.add_task("Reading sensor data...", total=None)
             raw_snapshot = SensorPoller(obd_connection).get_snapshot()
 
-        snapshot = raw_snapshot  # type: ignore[assignment]
+        snapshot = {name: sensor for name, sensor in raw_snapshot.items()}
         _show_sensors(console, raw_snapshot)
         console.print()
 
@@ -359,12 +404,6 @@ def main() -> int:  # noqa: PLR0911
     try:
         engine = DiagnosticEngine(model=args.model or None)
 
-        if args.no_cache:
-            # DiagnosticEngine caches results in memory. Clear it to force a fresh API
-            # call. Per-instance cache means this is always fresh on a new run anyway,
-            # but explicit clearing is correct for long-running or test scenarios.
-            engine._cache.clear()  # type: ignore[attr-defined]
-
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -377,7 +416,7 @@ def main() -> int:  # noqa: PLR0911
     except ValueError as exc:
         console.print(
             f"[bold red]✗ Configuration error:[/bold red] {exc}\n"
-            "[dim]Hint: Set ANTHROPIC_API_KEY in your .env file[/dim]"
+            + "[dim]Hint: Set ANTHROPIC_API_KEY in your .env file[/dim]"
         )
         return 1
     except DiagnosticError as exc:
