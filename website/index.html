@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>open-mechanic — AI-Powered OBD-II Car Diagnostics</title>
   <meta name="description" content="Open-source AI-powered car diagnostics. Read live sensor data and fault codes, get plain-English diagnosis with repair steps and cost estimates." />
-  <meta name="theme-color" content="#0c0d10" />
+  <meta name="theme-color" content="#f8f9fc" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
   <!-- Fonts -->
@@ -43,7 +43,7 @@
         <span class="logo-text">open-mechanic</span>
       </a>
 
-      <nav class="main-nav" aria-label="Main navigation">
+      <nav class="main-nav" id="site-nav" aria-label="Main navigation">
         <a href="#features">Features</a>
         <a href="#how-it-works">How It Works</a>
         <a href="#platforms">Platforms</a>
@@ -53,7 +53,7 @@
         </a>
       </nav>
 
-      <button type="button" class="mobile-menu-btn" aria-label="Toggle menu" aria-expanded="false">
+      <button type="button" class="mobile-menu-btn" aria-label="Toggle menu" aria-expanded="false" aria-controls="site-nav">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -249,7 +249,7 @@
       <h2 class="section-title">Platform Support</h2>
       <div class="platforms-grid">
 
-        <div class="platform-card">
+        <div class="platform-card platform-card--linux">
           <div class="platform-card-icon">
             <svg viewBox="0 0 32 32" width="36" height="36" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="4" y="4" width="24" height="16" rx="2"/>
@@ -262,28 +262,28 @@
           <h3>Linux</h3>
           <div class="platform-cmd"><code>dmesg | grep ttyUSB</code></div>
           <p>No extra drivers. OBDLink EX detected automatically as <code>/dev/ttyUSB0</code>.</p>
-          <span class="platform-status"><span class="pulse-dot"></span> Plug &amp; play — no drivers needed</span>
+          <span class="platform-status"><span class="pulse-dot"></span> Primary dev platform</span>
         </div>
 
-        <div class="platform-card">
+        <div class="platform-card platform-card--macos">
           <div class="platform-card-icon">
-            <svg viewBox="0 0 32 32" width="36" height="36" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="36" height="36" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M16 4 C10 4 6 10 6 16 C6 22 10 28 16 28 C22 28 26 22 26 16 C26 10 22 4 16 4Z"/>
               <path d="M12 10 C14 8 18 8 20 10"/>
               <path d="M10 16 L22 16"/>
-              <circle cx="12" cy="20" r="1.5" fill="var(--accent)"/>
-              <circle cx="20" cy="20" r="1.5" fill="var(--accent)"/>
+              <circle cx="12" cy="20" r="1.5" fill="var(--blue)"/>
+              <circle cx="20" cy="20" r="1.5" fill="var(--blue)"/>
             </svg>
           </div>
           <h3>macOS</h3>
           <div class="platform-cmd"><code>ls /dev/cu.usbserial-*</code></div>
           <p>FTDI VCP driver or native support on macOS 12+.</p>
-          <span class="platform-status"><span class="pulse-dot"></span> Native driver on macOS 12+</span>
+          <span class="platform-status"><span class="pulse-dot"></span> FTDI VCP or macOS 12+ native</span>
         </div>
 
-        <div class="platform-card">
+        <div class="platform-card platform-card--windows">
           <div class="platform-card-icon">
-            <svg viewBox="0 0 32 32" width="36" height="36" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="36" height="36" fill="none" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="4" y="4" width="11" height="11" rx="1"/>
               <rect x="17" y="4" width="11" height="11" rx="1"/>
               <rect x="4" y="17" width="11" height="11" rx="1"/>
@@ -291,9 +291,9 @@
             </svg>
           </div>
           <h3>Windows</h3>
-          <div class="platform-cmd"><code>Device Manager → COM3</code></div>
+          <div class="platform-cmd"><code>Device Manager &rarr; COM3</code></div>
           <p>Set <code>OBD_PORT=COM3</code> in your <code>.env</code> file.</p>
-          <span class="platform-status"><span class="pulse-dot"></span> Supported — set OBD_PORT in .env</span>
+          <span class="platform-status"><span class="pulse-dot"></span> Set OBD_PORT in .env</span>
         </div>
 
       </div>

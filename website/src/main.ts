@@ -1,5 +1,9 @@
 import './style.css';
 
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 function initHeaderScroll(): void {
   const header = document.getElementById('site-header');
   if (!header) return;
@@ -12,8 +16,8 @@ function initHeaderScroll(): void {
 }
 
 function initMobileMenu(): void {
-  const btn = document.querySelector('.mobile-menu-btn');
-  const nav = document.querySelector('.main-nav');
+  const btn = document.querySelector<HTMLButtonElement>('.mobile-menu-btn');
+  const nav = document.querySelector<HTMLElement>('.main-nav');
   if (!btn || !nav) return;
 
   btn.addEventListener('click', () => {
@@ -118,6 +122,17 @@ async function runTerminalAnimation(): Promise<void> {
   const cursor = document.getElementById('terminal-cursor');
   if (!output || !cursor) return;
 
+  if (prefersReducedMotion()) {
+    output.innerHTML = '';
+    for (const line of getTerminalScript()) {
+      const lineEl = document.createElement('div');
+      lineEl.innerHTML = line.text;
+      output.appendChild(lineEl);
+    }
+    cursor.style.display = 'none';
+    return;
+  }
+
   const script = getTerminalScript();
 
   const runOnce = async (): Promise<void> => {
@@ -160,7 +175,7 @@ function initSmoothScroll(): void {
       const target = document.querySelector(targetId);
       if (target) {
         e.preventDefault();
-        target.scrollIntoView({ behavior: 'smooth' });
+        target.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
       }
     });
   });
