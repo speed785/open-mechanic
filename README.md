@@ -6,6 +6,8 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Phase 1+2: Complete](https://img.shields.io/badge/phase%201%2B2-complete-brightgreen.svg)]()
 
+**Live site:** https://speed785.github.io/open-mechanic/
+
 ---
 
 ## What It Does
