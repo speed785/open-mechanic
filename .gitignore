@@ -45,6 +45,7 @@ Thumbs.db
 .env.*.local
 
 # Project-specific
+local_data/
 data/sessions.db
 data/*.db
 *.log

@@ -31,8 +31,8 @@ SENSOR_COMMANDS: list[str] = [
     "THROTTLE_POS",
     "O2_B1S1",
     "O2_B1S2",
-    "FUEL_TRIM_SHORT_B1",
-    "FUEL_TRIM_LONG_B1",
+    "SHORT_FUEL_TRIM_1",
+    "LONG_FUEL_TRIM_1",
     "CONTROL_MODULE_VOLTAGE",
     "ENGINE_LOAD",
     "TIMING_ADVANCE",
@@ -60,6 +60,16 @@ class SensorPoller:
 
             try:
                 cmd = obd.commands[name]
+                if cmd not in conn.supported_commands:
+                    snapshot[name] = SensorValue(
+                        name=name,
+                        value="N/A",
+                        unit=None,
+                        timestamp=now,
+                        supported=False,
+                    )
+                    continue
+
                 response = conn.query(cmd)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
                 if response is None or response.is_null():  # pyright: ignore[reportUnknownMemberType]
                     snapshot[name] = SensorValue(
@@ -74,7 +84,7 @@ class SensorPoller:
                 raw_value = response.value  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
                 magnitude = getattr(raw_value, "magnitude", raw_value)
                 unit_value = getattr(raw_value, "units", None)
-                value = str(magnitude)
+                value = f"{magnitude:.2f}" if isinstance(magnitude, float) else str(magnitude)
                 unit = str(unit_value) if unit_value is not None else None  # pyright: ignore[reportAny]
 
                 snapshot[name] = SensorValue(
