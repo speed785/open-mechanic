@@ -111,7 +111,10 @@ Output: DiagnosisResult dataclass
 | `src/open_mechanic/dtc.py` | DTC reading, decoding from `data/dtc_codes.json`, clear gate |
 | `src/open_mechanic/db/models.py` | SQLAlchemy models, `init_db()`, `get_session()` |
 | `src/open_mechanic/ai/prompts.py` | Prompt templates, `format_diagnostic_prompt()` |
-| `src/open_mechanic/ai/diagnose.py` | Claude API client, JSON parsing, 24h cache, disclaimer injection |
+| `src/open_mechanic/ai/diagnose.py` | Provider-agnostic diagnosis engine, JSON parsing, 24h cache, disclaimer injection |
+| `src/open_mechanic/ai/providers.py` | OpenAI, Anthropic, Ollama, and OpenAI-compatible local provider adapters |
+| `src/open_mechanic/diagnosis_cli.py` | Guided Rich CLI diagnosis flow and JSON report writing |
+| `src/open_mechanic/enrichment.py` | Optional NHTSA vPIC VIN decode enrichment |
 | `data/dtc_codes.json` | Offline DTC reference: `{code, description, severity, category}` |
 | `scripts/test_connection.py` | Standalone adapter test, uses `python-obd` directly (no package import) |
 
@@ -126,7 +129,7 @@ Output: DiagnosisResult dataclass
 - **Data structures**: dataclasses (not dicts, not Pydantic models in core layer)
 - **Linting**: ruff (`ruff check` + `ruff format`)
 - **Tests**: pytest
-- **AI model**: `claude-sonnet-4-5` (configurable via `ANTHROPIC_MODEL` env var)
+- **AI providers**: provider-agnostic via `AI_PROVIDER`; `auto` prefers OpenAI, then Anthropic, then Ollama, then OpenAI-compatible local
 - **Database**: SQLite dev path configurable via `DB_PATH` env var
 
 ---
@@ -194,8 +197,16 @@ All configured in `.env` (copy from `.env.example`):
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | — | Claude API key |
-| `ANTHROPIC_MODEL` | No | `claude-sonnet-4-5` | Claude model to use |
+| `AI_PROVIDER` | No | `auto` | Provider selection: `auto`, `openai`, `anthropic`, `ollama`, `openai_compatible` |
+| `OPENAI_API_KEY` | No | — | OpenAI API key, preferred by `auto` when present |
+| `OPENAI_MODEL` | No | `gpt-4o` | OpenAI model to use |
+| `ANTHROPIC_API_KEY` | No | — | Anthropic API key |
+| `ANTHROPIC_MODEL` | No | `claude-sonnet-4-5` | Anthropic model to use |
+| `OLLAMA_BASE_URL` | No | `http://localhost:11434` | Ollama local API URL |
+| `OLLAMA_MODEL` | No | — | Ollama model to use |
+| `LOCAL_OPENAI_BASE_URL` | No | — | OpenAI-compatible local API base URL |
+| `LOCAL_OPENAI_API_KEY` | No | `local` | OpenAI-compatible local API key if required |
+| `LOCAL_OPENAI_MODEL` | No | — | OpenAI-compatible local model to use |
 | `OBD_PORT` | No | platform default | Override OBD port (e.g. `COM3`, `/dev/ttyUSB0`) |
 | `OBD_BAUDRATE` | No | auto | Serial baudrate |
 | `OBD_PROTOCOL` | No | auto | OBD protocol number. Set `6` for ISO 15765-4 CAN 11/500 (most 2008+ cars). Skips slow auto-detection. |
@@ -214,3 +225,4 @@ All configured in `.env` (copy from `.env.example`):
 - Do not add EV/Hybrid-specific logic in Phase 1-2
 - Do not use merge commits or rebase merges (squash-merge only repo)
 - Do not rely on OBD protocol auto-detection in production — always set OBD_PROTOCOL in .env
+- See `docs/AGENT_WORKFLOWS.md` before changing provider selection, VIN enrichment, or agent-facing workflows

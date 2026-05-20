@@ -12,6 +12,7 @@ import anthropic
 from dotenv import load_dotenv
 
 from open_mechanic.ai.prompts import DIAGNOSTIC_SYSTEM_PROMPT, format_diagnostic_prompt
+from open_mechanic.ai.providers import DiagnosticProvider, ProviderError, select_provider
 from open_mechanic.db.models import VehicleProfile
 from open_mechanic.dtc import DTCCode
 
@@ -43,6 +44,7 @@ class DiagnosisResult:
     dtc_codes: list[str]
     vehicle_str: str
     timestamp: datetime
+    provider: str = "unknown"
     cached: bool = False
 
 
@@ -91,14 +93,24 @@ class DiagnosticEngine:
         self,
         api_key: str | None = None,
         model: str | None = None,
+        provider: DiagnosticProvider | None = None,
+        provider_name: str | None = None,
     ) -> None:
-        resolved_api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
-        if resolved_api_key is None:
-            msg = "ANTHROPIC_API_KEY is required to initialize DiagnosticEngine"
-            raise ValueError(msg)
+        if provider is not None:
+            self._provider = provider
+        elif api_key is not None or model is not None:
+            from open_mechanic.ai.providers import AnthropicProvider
 
-        self._model: str = model or os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-5"
-        self._client: anthropic.Anthropic = anthropic.Anthropic(api_key=resolved_api_key)
+            resolved_api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+            if resolved_api_key is None:
+                msg = "ANTHROPIC_API_KEY is required to initialize DiagnosticEngine"
+                raise ValueError(msg)
+            self._provider = AnthropicProvider(
+                api_key=resolved_api_key,
+                model=model or os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-5",
+            )
+        else:
+            self._provider = select_provider(provider_name)
         self._cache: dict[str, tuple[DiagnosisResult, datetime]] = {}
         self._cache_ttl: float = 86400.0
 
@@ -128,19 +140,10 @@ class DiagnosticEngine:
         user_message = format_diagnostic_prompt(vehicle, dtcs, snapshot)
 
         try:
-            response = self._client.messages.create(
-                model=self._model,
-                max_tokens=1024,
-                system=DIAGNOSTIC_SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": user_message}],
+            raw_text = self._provider.complete(
+                system_prompt=DIAGNOSTIC_SYSTEM_PROMPT,
+                user_prompt=user_message,
             )
-
-            raw_text_parts: list[str] = []
-            for block in response.content:
-                text = getattr(block, "text", None)
-                if isinstance(text, str):
-                    raw_text_parts.append(text)
-            raw_text = "\n".join(raw_text_parts)
             cleaned_text = _strip_markdown_code_fences(raw_text)
             data = json.loads(cleaned_text)
 
@@ -158,6 +161,7 @@ class DiagnosticEngine:
                 dtc_codes=dtc_codes,
                 vehicle_str=vehicle_str,
                 timestamp=datetime.now(),
+                provider=self._provider.name,
             )
             result.disclaimer = DISCLAIMER
             self._cache[key] = (result, datetime.now())
@@ -177,10 +181,11 @@ class DiagnosticEngine:
                 dtc_codes=dtc_codes,
                 vehicle_str=vehicle_str,
                 timestamp=datetime.now(),
+                provider=self._provider.name,
             )
             fallback_result.disclaimer = DISCLAIMER
             self._cache[key] = (fallback_result, datetime.now())
             return fallback_result
-        except anthropic.APIError as exc:
-            logger.error("Claude API error during diagnostic call: %s", exc)
+        except (anthropic.APIError, ProviderError) as exc:
+            logger.error("AI provider error during diagnostic call: %s", exc)
             raise DiagnosticError(str(exc)) from exc

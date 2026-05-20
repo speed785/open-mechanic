@@ -69,3 +69,29 @@ def test_format_diagnostic_prompt_includes_vehicle_dtcs_and_sensors() -> None:
     assert "  - P0420: Catalyst system efficiency below threshold [warning, emissions]" in prompt
     assert "Live Sensor Data:\n  RPM: 750 rpm" in prompt
     assert prompt.endswith("Please analyze this data and provide your diagnosis as JSON.")
+
+
+def test_format_diagnostic_prompt_includes_vin_enrichment_context() -> None:
+    vehicle = VehicleProfile(
+        year=2018,
+        make="Ford",
+        model="F-150",
+        mileage=85000,
+        vin="1FTFW1E58JFC12345",
+    )
+    snapshot = {
+        "VIN_DECODE": {
+            "source": "nhtsa_vpic",
+            "year": 2018,
+            "make": "FORD",
+            "model": "F-150",
+            "engine": "3.5L GTDI",
+            "error": None,
+        }
+    }
+
+    prompt = format_diagnostic_prompt(vehicle, [], snapshot)
+
+    assert "VIN Enrichment: NHTSA vPIC" in prompt
+    assert "Engine: 3.5L GTDI" in prompt
+    assert "VIN_DECODE: N/A (unsupported)" not in prompt

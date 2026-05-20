@@ -139,11 +139,27 @@ def format_diagnostic_prompt(
     else:
         fault_section = "Fault Codes: None"
 
-    sensor_section = f"Live Sensor Data:\n{format_sensor_snapshot(snapshot)}"
+    vin_enrichment = snapshot.get("VIN_DECODE")
+    sensor_snapshot = {name: value for name, value in snapshot.items() if name != "VIN_DECODE"}
+    context_sections: list[str] = [fault_section]
+    if isinstance(vin_enrichment, dict) and not vin_enrichment.get("error"):
+        enrichment_lines = ["VIN Enrichment: NHTSA vPIC"]
+        for label, key in (
+            ("Year", "year"),
+            ("Make", "make"),
+            ("Model", "model"),
+            ("Engine", "engine"),
+        ):
+            value = vin_enrichment.get(key)
+            if value:
+                enrichment_lines.append(f"  {label}: {value}")
+        context_sections.append("\n".join(enrichment_lines))
+    sensor_section = f"Live Sensor Data:\n{format_sensor_snapshot(sensor_snapshot)}"
+    context_sections.append(sensor_section)
+    joined_context = "\n\n".join(context_sections)
 
     return (
         f"{vehicle_line}\n\n"
-        f"{fault_section}\n\n"
-        f"{sensor_section}\n\n"
+        f"{joined_context}\n\n"
         "Please analyze this data and provide your diagnosis as JSON."
     )

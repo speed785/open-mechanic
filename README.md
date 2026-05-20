@@ -71,8 +71,10 @@ cp .env.example .env
 python scripts/test_connection.py
 # Tip: if connection hangs, your car likely uses CAN — add OBD_PROTOCOL=6 to .env
 
-# AI diagnosis (Phase 3 CLI — coming soon)
-# For now, use the Python API directly — see docs/
+# AI diagnosis with the guided Rich CLI
+open-mechanic diagnose --vehicle "2018 Ford F-150" --mileage 85000 --offline
+# With a VIN, open-mechanic automatically enriches context via NHTSA vPIC
+open-mechanic diagnose --vehicle "2018 Ford F-150" --mileage 85000 --vin 1FTFW1E58JFC12345 --provider auto
 ```
 
 ---
@@ -109,11 +111,11 @@ python scripts/test_connection.py
 |-------|-----------|
 | Hardware | OBDLink EX USB adapter |
 | OBD Reading | `python-obd`, `pyserial` |
-| AI/LLM | Pluggable AI backend (Claude, OpenAI, and more) |
+| AI/LLM | Provider-agnostic: OpenAI, Anthropic, Ollama, OpenAI-compatible local |
 | Backend | Python + FastAPI |
 | Frontend | React + TailwindCSS *(Phase 3)* |
 | Database | SQLite → PostgreSQL |
-| CLI | Python + `rich` |
+| CLI | Python + `rich` Guided CLI |
 | Hosting | Self-hostable Docker |
 | CI/CD | GitHub Actions |
 

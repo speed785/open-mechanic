@@ -17,6 +17,7 @@ from rich.table import Table
 from rich.text import Text
 
 from open_mechanic.connection import OBDConnection, scan_ports
+from open_mechanic.diagnosis_cli import run_ai_diagnosis
 from open_mechanic.dtc import DTCReader
 from open_mechanic.local_store import (
     PROFILE_PATH,
@@ -148,6 +149,7 @@ MENU_ITEMS: list[tuple[str, str]] = [
     ("readiness", "Readiness Monitors"),
     ("freeze-frame", "Freeze Frame"),
     ("snapshot", "Health Snapshot"),
+    ("diagnose", "AI Diagnosis"),
     ("quit", "Exit"),
 ]
 
@@ -166,11 +168,48 @@ def main(argv: list[str] | None = None) -> int:
         cmd = subparsers.add_parser(name, help=f"Run {name} tool")
         _add_connection_args(cmd)
         if name == "sensors":
-            cmd.add_argument("--samples", type=int, default=0, help="Samples to capture; 0 runs until Ctrl-C")
-            cmd.add_argument("--interval", type=float, default=1.0, help="Refresh interval in seconds")
+            cmd.add_argument(
+                "--samples", type=int, default=0, help="Samples to capture; 0 runs until Ctrl-C"
+            )
+            cmd.add_argument(
+                "--interval", type=float, default=1.0, help="Refresh interval in seconds"
+            )
             cmd.add_argument("--no-graphs", action="store_true", help="Hide live sensor graphs")
 
-    args = parser.parse_args(argv)
+    diagnose_parser = subparsers.add_parser("diagnose", help="Run AI diagnosis")
+    _add_connection_args(diagnose_parser)
+    diagnose_parser.add_argument(
+        "--vehicle", required=True, help='Vehicle description, e.g. "2018 Ford F-150"'
+    )
+    diagnose_parser.add_argument(
+        "--mileage", type=int, required=True, help="Current odometer reading in miles"
+    )
+    diagnose_parser.add_argument(
+        "--vin", default=None, help="VIN for automatic NHTSA vPIC enrichment"
+    )
+    diagnose_parser.add_argument(
+        "--provider",
+        default=None,
+        help="AI provider: auto, openai, anthropic, ollama, openai_compatible",
+    )
+    diagnose_parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="Skip OBD adapter reads and diagnose from profile/VIN context only",
+    )
+    diagnose_parser.add_argument(
+        "--no-vin-decode",
+        action="store_true",
+        help="Do not call NHTSA vPIC even when VIN is provided",
+    )
+    diagnose_parser.add_argument(
+        "--report-dir", default=None, help="Directory for diagnosis JSON reports"
+    )
+
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit as exc:
+        return exc.code if isinstance(exc.code, int) else 1
     console = Console()
     ensure_local_dirs()
 
@@ -182,13 +221,19 @@ def main(argv: list[str] | None = None) -> int:
         profile = prompt_vehicle_profile(console)
         show_profile(console, profile)
         return 0
+    if args.command == "diagnose":
+        return run_ai_diagnosis(args, console)
 
     return run_direct_tool(args.command, args, console)
 
 
 def _add_connection_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--port", default=None, help="Serial port override, for example /dev/ttyUSB0")
-    parser.add_argument("--protocol", default=None, help="OBD protocol override, for example 6 for CAN 11/500")
+    parser.add_argument(
+        "--port", default=None, help="Serial port override, for example /dev/ttyUSB0"
+    )
+    parser.add_argument(
+        "--protocol", default=None, help="OBD protocol override, for example 6 for CAN 11/500"
+    )
     parser.add_argument("--timeout", type=float, default=10.0, help="Connection timeout in seconds")
     parser.add_argument("--baudrate", type=int, default=115200, help="Serial baudrate")
 
@@ -215,11 +260,36 @@ def run_tools_menu(args: argparse.Namespace, console: Console) -> int:
             profile = prompt_vehicle_profile(console)
 
         console.clear()
-        status = run_direct_tool(tool_name, args, console, profile=profile)
+        if tool_name == "diagnose":
+            status = run_ai_diagnosis(_diagnose_args_from_profile(args, console, profile), console)
+        else:
+            status = run_direct_tool(tool_name, args, console, profile=profile)
         if status != 0:
             return status
         Prompt.ask("Press Enter to return to tools", default="")
 
+
+def _diagnose_args_from_profile(
+    args: argparse.Namespace,
+    console: Console,
+    profile: VehicleProfile,
+) -> argparse.Namespace:
+    mileage = profile.mileage
+    if mileage is None:
+        mileage = IntPrompt.ask("Mileage")
+    payload = vars(args).copy()
+    payload.update(
+        {
+            "vehicle": profile.label,
+            "mileage": mileage,
+            "vin": None,
+            "provider": None,
+            "offline": False,
+            "no_vin_decode": False,
+            "report_dir": None,
+        }
+    )
+    return argparse.Namespace(**payload)
 
 
 def _select_menu_item(console: Console, profile: VehicleProfile | None, selected: int) -> int:
@@ -325,7 +395,11 @@ def run_direct_tool(
     log = SessionLog(tool_name, active_profile)
     log.write(
         "connection",
-        {"port": connection.get_port(), "protocol": protocol, "supported_commands": _supported_count(raw_conn)},
+        {
+            "port": connection.get_port(),
+            "protocol": protocol,
+            "supported_commands": _supported_count(raw_conn),
+        },
     )
 
     try:
@@ -372,7 +446,6 @@ def prompt_vehicle_profile(console: Console) -> VehicleProfile:
     return profile
 
 
-
 def select_vehicle_make(console: Console) -> str:
     selected = _select_from_list(console, "Select Make", MAJOR_MAKES)
     if selected == "Other":
@@ -407,8 +480,9 @@ def _select_from_list(
             console.clear()
             return options[selected]
         elif key.isdigit():
-            selected = _read_number_selection(key, len(options), selected)
-            if selected is not None:
+            candidate = _read_number_selection(key, len(options), selected)
+            if candidate is not None:
+                selected = candidate
                 console.clear()
                 return options[selected]
             selected = 0
@@ -467,7 +541,10 @@ def show_profile(console: Console, profile: VehicleProfile | None = None) -> Non
         table.add_row("Status", "[yellow]not set[/yellow]")
     else:
         table.add_row("Vehicle", active_profile.label)
-        table.add_row("Mileage", str(active_profile.mileage) if active_profile.mileage else "[dim]not set[/dim]")
+        table.add_row(
+            "Mileage",
+            str(active_profile.mileage) if active_profile.mileage else "[dim]not set[/dim]",
+        )
         table.add_row("Storage", str(PROFILE_PATH))
     console.print(table)
 
@@ -602,12 +679,22 @@ def _query_named_commands(conn: obd.OBD, command_names: list[str]) -> list[dict[
             continue
         label = SENSOR_LABELS.get(name, name.replace("DTC_", "").replace("_", " ").title())
         if command not in conn.supported_commands:
-            rows.append({"name": name, "label": label, "value": "N/A", "unit": "", "status": "unsupported"})
+            rows.append(
+                {"name": name, "label": label, "value": "N/A", "unit": "", "status": "unsupported"}
+            )
             continue
         try:
             response = conn.query(command)
         except Exception as exc:
-            rows.append({"name": name, "label": label, "value": "N/A", "unit": "", "status": f"error: {exc}"})
+            rows.append(
+                {
+                    "name": name,
+                    "label": label,
+                    "value": "N/A",
+                    "unit": "",
+                    "status": f"error: {exc}",
+                }
+            )
             continue
         value, unit = _format_response(response)
         status = "ok" if value != "N/A" else "no data"
@@ -628,9 +715,18 @@ def _readiness_rows(conn: obd.OBD, source: str, command: object) -> list[dict[st
     value = response.value
     rows: list[dict[str, Any]] = []
     if hasattr(value, "MIL"):
-        rows.append({"source": source, "monitor": "MIL", "available": True, "complete": not bool(value.MIL)})
+        rows.append(
+            {"source": source, "monitor": "MIL", "available": True, "complete": not bool(value.MIL)}
+        )
     if hasattr(value, "DTC_count"):
-        rows.append({"source": source, "monitor": "DTC count", "available": True, "complete": int(value.DTC_count) == 0})
+        rows.append(
+            {
+                "source": source,
+                "monitor": "DTC count",
+                "available": True,
+                "complete": int(value.DTC_count) == 0,
+            }
+        )
 
     items = sorted(getattr(value, "__dict__", {}).items(), key=lambda item: str(item[0]))
     for name, test in items:
@@ -676,7 +772,6 @@ def _sensor_payload(snapshot: dict[str, SensorValue]) -> dict[str, Any]:
         }
         for name, sensor in snapshot.items()
     }
-
 
 
 def _update_sensor_history(
@@ -763,9 +858,10 @@ def _parse_float(value: str) -> float | None:
 
 
 def _format_response(response: object) -> tuple[str, str]:
-    if response is None or response.is_null():
+    is_null = getattr(response, "is_null", None)
+    if response is None or (callable(is_null) and is_null()):
         return "N/A", ""
-    raw_value = response.value
+    raw_value = getattr(response, "value", None)
     if raw_value is None:
         return "N/A", ""
     magnitude = getattr(raw_value, "magnitude", raw_value)
