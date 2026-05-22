@@ -19,7 +19,7 @@ You don't need an OBD adapter to contribute. Here's what's open to everyone:
 ## Development Setup
 
 ```bash
-git clone https://github.com/yourusername/open-mechanic
+git clone https://github.com/speed785/open-mechanic
 cd open-mechanic
 pip install -e ".[dev]"
 

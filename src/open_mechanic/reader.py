@@ -55,11 +55,11 @@ class SensorPoller:
         now = datetime.now()
 
         for name in SENSOR_COMMANDS:
-            if name not in obd.commands:
+            cmd = getattr(obd.commands, name, None)
+            if cmd is None:
                 continue
 
             try:
-                cmd = obd.commands[name]
                 if cmd not in conn.supported_commands:
                     snapshot[name] = SensorValue(
                         name=name,

@@ -15,7 +15,7 @@
 1. Plug an OBD-II USB adapter into your car's OBD-II port
 2. Connect the adapter to your computer via USB (Linux, macOS, or Windows)
 3. `open-mechanic` reads live sensor data + fault codes using `python-obd`
-4. Feeds that data to an AI model of your choice with your vehicle's context
+4. Feeds that data to Claude with your vehicle's context
 5. Returns plain-English diagnosis, severity rating, repair steps, and estimated cost
 
 **Target users**: Car owners who want real visibility into their vehicle without paying dealer diagnostic fees.
@@ -59,7 +59,7 @@ sudo usermod -a -G dialout $USER
 
 ```bash
 # Clone and install
-git clone https://github.com/yourusername/open-mechanic
+git clone https://github.com/speed785/open-mechanic
 cd open-mechanic
 pip install -e ".[dev]"
 
@@ -109,12 +109,12 @@ python scripts/test_connection.py
 |-------|-----------|
 | Hardware | OBDLink EX USB adapter |
 | OBD Reading | `python-obd`, `pyserial` |
-| AI/LLM | Pluggable AI backend (Claude, OpenAI, and more) |
-| Backend | Python + FastAPI |
-| Frontend | React + TailwindCSS *(Phase 3)* |
+| AI/LLM | Anthropic Claude via `ANTHROPIC_API_KEY` |
+| Backend | Python package now; FastAPI planned for Phase 3 |
+| Frontend | Vite/TypeScript static site now; dashboard planned for Phase 3 |
 | Database | SQLite → PostgreSQL |
 | CLI | Python + `rich` |
-| Hosting | Self-hostable Docker |
+| Hosting | GitHub Pages website now; Docker planned |
 | CI/CD | GitHub Actions |
 
 ---

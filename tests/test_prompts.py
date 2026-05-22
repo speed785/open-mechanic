@@ -35,6 +35,12 @@ def test_format_sensor_snapshot_formats_supported_and_unsupported_values() -> No
     assert "  INTAKE_TEMP: N/A (unsupported)" in formatted
 
 
+def test_format_sensor_snapshot_handles_plain_values() -> None:
+    formatted = format_sensor_snapshot({"RAW": 42})
+
+    assert formatted == "  RAW: 42"
+
+
 def test_format_diagnostic_prompt_includes_vehicle_dtcs_and_sensors() -> None:
     vehicle = VehicleProfile(
         year=2018,
@@ -69,3 +75,19 @@ def test_format_diagnostic_prompt_includes_vehicle_dtcs_and_sensors() -> None:
     assert "  - P0420: Catalyst system efficiency below threshold [warning, emissions]" in prompt
     assert "Live Sensor Data:\n  RPM: 750 rpm" in prompt
     assert prompt.endswith("Please analyze this data and provide your diagnosis as JSON.")
+
+
+def test_format_diagnostic_prompt_handles_no_dtcs_and_no_vin() -> None:
+    vehicle = VehicleProfile(
+        year=2018,
+        make="Ford",
+        model="F-150",
+        mileage=85000,
+        vin=None,
+    )
+
+    prompt = format_diagnostic_prompt(vehicle, [], {})
+
+    assert "VIN" not in prompt
+    assert "Fault Codes: None" in prompt
+    assert "  (no sensor data available)" in prompt

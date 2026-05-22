@@ -74,4 +74,4 @@ warn_unused_configs = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --cov=open_mechanic --cov-report=term-missing --cov-fail-under=100"

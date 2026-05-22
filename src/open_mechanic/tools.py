@@ -6,7 +6,7 @@ import sys
 import time
 from dataclasses import asdict
 from datetime import datetime
-from typing import Any
+from typing import Any, Protocol
 
 import obd
 from rich.console import Console, Group
@@ -407,10 +407,10 @@ def _select_from_list(
             console.clear()
             return options[selected]
         elif key.isdigit():
-            selected = _read_number_selection(key, len(options), selected)
-            if selected is not None:
+            next_selected = _read_number_selection(key, len(options), selected)
+            if next_selected is not None:
                 console.clear()
-                return options[selected]
+                return options[next_selected]
             selected = 0
 
 
@@ -762,7 +762,13 @@ def _parse_float(value: str) -> float | None:
         return None
 
 
-def _format_response(response: object) -> tuple[str, str]:
+class _OBDResponse(Protocol):
+    value: object
+
+    def is_null(self) -> bool: ...
+
+
+def _format_response(response: _OBDResponse | None) -> tuple[str, str]:
     if response is None or response.is_null():
         return "N/A", ""
     raw_value = response.value
@@ -810,5 +816,5 @@ def _header(profile: VehicleProfile | None) -> Panel:
     return Panel(text, border_style="cyan")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(main())

@@ -105,6 +105,15 @@ class DiagnosticEngine:
     def _cache_key(self, dtc_codes: list[str], vehicle_str: str) -> str:
         return f"{vehicle_str}|{','.join(sorted(dtc_codes))}"
 
+    def _diagnostic_cache_key(
+        self,
+        dtc_codes: list[str],
+        vehicle_str: str,
+        snapshot: dict[str, Any],
+    ) -> str:
+        snapshot_json = json.dumps(_normalize_for_cache(snapshot), sort_keys=True, default=str)
+        return f"{self._cache_key(dtc_codes, vehicle_str)}|{snapshot_json}"
+
     def _is_cache_valid(self, key: str) -> bool:
         if key not in self._cache:
             return False
@@ -120,7 +129,7 @@ class DiagnosticEngine:
         vehicle_str = f"{vehicle.year} {vehicle.make} {vehicle.model} ({vehicle.mileage:,} miles)"
         dtc_codes = [dtc.code for dtc in dtcs]
 
-        key = self._cache_key(dtc_codes, vehicle_str)
+        key = self._diagnostic_cache_key(dtc_codes, vehicle_str, snapshot)
         if self._is_cache_valid(key):
             cached_result, _ = self._cache[key]
             return replace(cached_result, cached=True)
@@ -143,6 +152,8 @@ class DiagnosticEngine:
             raw_text = "\n".join(raw_text_parts)
             cleaned_text = _strip_markdown_code_fences(raw_text)
             data = json.loads(cleaned_text)
+            if not isinstance(data, dict):
+                raise ValueError("AI response JSON must be an object")
 
             estimated_cost = _coerce_cost_range(data.get("estimated_cost_usd"))
             result = DiagnosisResult(
@@ -162,11 +173,11 @@ class DiagnosticEngine:
             result.disclaimer = DISCLAIMER
             self._cache[key] = (result, datetime.now())
             return result
-        except json.JSONDecodeError as exc:
+        except (json.JSONDecodeError, ValueError) as exc:
             logger.error("Failed to parse Claude diagnostic JSON: %s", exc)
             fallback_result = DiagnosisResult(
                 severity="warning",
-                summary="Diagnosis unavailable — could not parse AI response",
+                summary="Diagnosis unavailable - could not parse AI response",
                 likely_causes=[],
                 repair_steps=[],
                 estimated_cost_usd={"low": 0, "high": 0},
@@ -184,3 +195,17 @@ class DiagnosticEngine:
         except anthropic.APIError as exc:
             logger.error("Claude API error during diagnostic call: %s", exc)
             raise DiagnosticError(str(exc)) from exc
+
+
+def _normalize_for_cache(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): _normalize_for_cache(item) for key, item in value.items()}
+    if isinstance(value, list | tuple):
+        return [_normalize_for_cache(item) for item in value]
+    if hasattr(value, "supported") and hasattr(value, "value"):
+        return {
+            "supported": bool(value.supported),
+            "value": str(value.value),
+            "unit": getattr(value, "unit", None),
+        }
+    return value

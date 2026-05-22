@@ -72,12 +72,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-typecheck-${{ matrix.python-version }}-
 
-      - name: Install mypy
-        run: pip install mypy anthropic
+      - name: Install package with dev and API dependencies
+        run: pip install -e ".[dev,api]"
 
       - name: Run mypy
         run: |
-          if [ -d "src" ]; then mypy src/ --ignore-missing-imports; else echo "src/ not yet created — skipping typecheck"; fi
+          if [ -d "src" ]; then mypy src/; else echo "src/ not yet created — skipping typecheck"; fi
 
   test:
     name: Tests (pytest)

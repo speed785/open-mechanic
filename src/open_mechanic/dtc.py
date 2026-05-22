@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
+from importlib import resources
 from pathlib import Path
 
 import obd
@@ -32,9 +33,8 @@ class DTCReader:
         self._db: dict[str, dict[str, str]] = self._load_dtc_db(dtc_db_path)
 
     def _load_dtc_db(self, dtc_db_path: str) -> dict[str, dict[str, str]]:
-        db_path = Path(dtc_db_path)
         try:
-            payload: object = json.loads(db_path.read_text(encoding="utf-8"))  # pyright: ignore[reportAny]
+            payload: object = json.loads(_read_dtc_db_text(dtc_db_path))  # pyright: ignore[reportAny]
         except FileNotFoundError:
             logger.warning(
                 "DTC database file not found at %s; proceeding with empty database", dtc_db_path
@@ -189,3 +189,15 @@ class DTCReader:
 
         logger.warning("DTC codes were cleared")
         return True
+
+
+def _read_dtc_db_text(dtc_db_path: str) -> str:
+    db_path = Path(dtc_db_path)
+    if db_path.exists():
+        return db_path.read_text(encoding="utf-8")
+
+    if dtc_db_path == "data/dtc_codes.json":
+        package_path = resources.files("open_mechanic").joinpath("data/dtc_codes.json")
+        return package_path.read_text(encoding="utf-8")
+
+    raise FileNotFoundError(dtc_db_path)
