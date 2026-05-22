@@ -61,7 +61,9 @@ def test_clear_dtcs_requires_explicit_confirmation(tmp_path: Path) -> None:
         _ = reader.clear_dtcs()
 
 
-def test_default_dtc_database_loads_outside_repository_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_default_dtc_database_loads_outside_repository_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     reader = DTCReader(OBDConnection(port="/dev/null"))
 
@@ -82,9 +84,7 @@ def test_dtc_database_invalid_payloads_fall_back_to_unknown(tmp_path: Path, payl
 
 
 def test_missing_explicit_dtc_database_path_falls_back_to_unknown(tmp_path: Path) -> None:
-    reader = DTCReader(
-        OBDConnection(port="/dev/null"), dtc_db_path=str(tmp_path / "missing.json")
-    )
+    reader = DTCReader(OBDConnection(port="/dev/null"), dtc_db_path=str(tmp_path / "missing.json"))
 
     assert reader.decode("P0420").description == "Unknown code"
 

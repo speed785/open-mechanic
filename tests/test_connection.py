@@ -21,7 +21,11 @@ def test_default_ports_by_platform(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_default_port_uses_first_macos_usbserial(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(connection.platform, "system", lambda: "Darwin")
-    monkeypatch.setattr(connection.glob, "glob", lambda pattern: ["/dev/cu.usbserial-A"] if pattern.startswith("/dev/cu") else [])
+    monkeypatch.setattr(
+        connection.glob,
+        "glob",
+        lambda pattern: ["/dev/cu.usbserial-A"] if pattern.startswith("/dev/cu") else [],
+    )
 
     assert get_default_port() == "/dev/cu.usbserial-A"
 

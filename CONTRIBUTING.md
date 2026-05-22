@@ -30,20 +30,28 @@ cp .env.example .env
 Run the test suite:
 
 ```bash
+pip install -e ".[dev,api]"
 pytest
 ```
 
 Run the linter:
 
 ```bash
-ruff check src/ scripts/
-ruff format src/ scripts/
+ruff check src scripts tests
+ruff format src scripts tests
 ```
 
 Run type checking:
 
 ```bash
 mypy src/
+```
+
+Run the local API:
+
+```bash
+pip install -e ".[api]"
+uvicorn open_mechanic.api:create_app --factory --reload
 ```
 
 Work on the website:

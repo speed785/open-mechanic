@@ -101,9 +101,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-test-${{ matrix.python-version }}-
 
-      - name: Install package with dev dependencies
+      - name: Install package with dev and API dependencies
         run: |
-          if [ -f "pyproject.toml" ]; then pip install -e ".[dev]"; else pip install pytest; fi
+          if [ -f "pyproject.toml" ]; then pip install -e ".[dev,api]"; else pip install pytest; fi
 
       - name: Run pytest
         run: pytest tests/ -v --tb=short

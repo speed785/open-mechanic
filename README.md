@@ -61,7 +61,7 @@ sudo usermod -a -G dialout $USER
 # Clone and install
 git clone https://github.com/speed785/open-mechanic
 cd open-mechanic
-pip install -e ".[dev]"
+pip install -e ".[dev,api]"
 
 # Set your AI API key
 cp .env.example .env
@@ -76,6 +76,9 @@ open-mechanic
 
 # Or run a one-shot AI diagnosis
 python scripts/diagnose.py --vehicle "2018 Ford F-150" --mileage 85000 --protocol 6
+
+# Or run the local read-only API
+uvicorn open_mechanic.api:create_app --factory --reload
 ```
 
 ---
@@ -113,7 +116,7 @@ python scripts/diagnose.py --vehicle "2018 Ford F-150" --mileage 85000 --protoco
 | Hardware | OBDLink EX USB adapter |
 | OBD Reading | `python-obd`, `pyserial` |
 | AI/LLM | Anthropic Claude via `ANTHROPIC_API_KEY` |
-| Backend | Python package now; FastAPI planned for Phase 3 |
+| Backend | Python package + FastAPI read-only API |
 | Frontend | Vite/TypeScript static site now; dashboard planned for Phase 3 |
 | Database | SQLite → PostgreSQL |
 | CLI | Python + `rich` |
@@ -127,13 +130,13 @@ python scripts/diagnose.py --vehicle "2018 Ford F-150" --mileage 85000 --protoco
 Available now:
 
 - Read-only CLI tools menu with vehicle profile, live sensors, DTCs, readiness, freeze-frame, and health snapshot views
+- Read-only FastAPI backend for vehicle profile, live sensors, DTCs, health snapshot, and diagnosis
 - One-shot AI diagnosis script backed by Anthropic Claude
 - SQLite data models and local JSON session logs
 - Vite/TypeScript public website
 
 Planned:
 
-- FastAPI REST backend
 - Interactive web dashboard and repair guide viewer
 - Docker/self-hosted deployment package
 - Additional AI provider backends beyond Anthropic
@@ -149,23 +152,25 @@ OBD-II connection management · Live sensor polling · DTC fault code reading + 
 AI API integration · Structured JSON diagnostic output · Local DTC code cache
 
 ### 📋 Phase 3 — Interface *(Month 2)*
-Rich CLI with color-coded severity · FastAPI REST backend · React dashboard + repair guide viewer · Maintenance timeline tracker
+Rich CLI with color-coded severity · ✅ FastAPI REST backend foundation · React dashboard + repair guide viewer · Maintenance timeline tracker
 
 ### 🌐 Phase 4 — Community *(Month 3–6)*
 Public open-source release · Community DTC database · Manufacturer-specific modules (Ford, VW, BMW) · Optional SaaS hosted tier
 
 ---
 
-## API Endpoints *(Phase 3)*
+## Current API Endpoints
 
 ```
-GET  /api/vehicle          — get/set vehicle profile
-GET  /api/live             — live sensor data stream (SSE)
+GET  /api/health           — service liveness
+GET  /api/vehicle          — local vehicle profile
+GET  /api/live             — one-shot live sensor snapshot
 GET  /api/dtc              — current fault codes
+GET  /api/snapshot         — combined connection, sensor, and DTC snapshot
 POST /api/diagnose         — trigger AI diagnosis
-GET  /api/history          — past diagnostic sessions
-GET  /api/guides/{dtc}     — repair guide for a specific DTC code
 ```
+
+See [docs/API.md](docs/API.md) for request/response contracts and planned dashboard endpoints.
 
 ---
 

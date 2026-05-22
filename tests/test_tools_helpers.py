@@ -134,9 +134,13 @@ def test_run_tools_menu_handles_quit_profile_and_tool(monkeypatch: pytest.Monkey
     selections = iter([0, 1, 6])
     called: list[str] = []
     monkeypatch.setattr(tools, "load_vehicle_profile", lambda: profile)
-    monkeypatch.setattr(tools, "_select_menu_item", lambda console, profile, selected: next(selections))
+    monkeypatch.setattr(
+        tools, "_select_menu_item", lambda console, profile, selected: next(selections)
+    )
     monkeypatch.setattr(tools, "prompt_vehicle_profile", lambda console: profile)
-    monkeypatch.setattr(tools, "show_profile", lambda console, profile=None: called.append("profile"))
+    monkeypatch.setattr(
+        tools, "show_profile", lambda console, profile=None: called.append("profile")
+    )
     monkeypatch.setattr(
         tools,
         "run_direct_tool",
@@ -367,7 +371,9 @@ def test_run_direct_tool_dispatches_tool(
     args = argparse.Namespace(port=None, protocol=None, baudrate=115200, timeout=1, samples=1)
     calls: list[str] = []
     fake_connection = _FakeToolConnection()
-    monkeypatch.setattr(tools, "load_vehicle_profile", lambda: VehicleProfile(2018, "Ford", "F-150"))
+    monkeypatch.setattr(
+        tools, "load_vehicle_profile", lambda: VehicleProfile(2018, "Ford", "F-150")
+    )
     monkeypatch.setattr(tools, "OBDConnection", lambda **kwargs: fake_connection)
     monkeypatch.setattr(tools, "SessionLog", _FakeSessionLog)
     monkeypatch.setattr(tools, "scan_ports", lambda: [])
@@ -381,7 +387,9 @@ def test_run_direct_tool_dispatches_tool(
 def test_run_direct_tool_handles_connection_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     console = Console(file=None)
     args = argparse.Namespace(port=None, protocol=None, baudrate=115200, timeout=1)
-    monkeypatch.setattr(tools, "load_vehicle_profile", lambda: VehicleProfile(2018, "Ford", "F-150"))
+    monkeypatch.setattr(
+        tools, "load_vehicle_profile", lambda: VehicleProfile(2018, "Ford", "F-150")
+    )
     monkeypatch.setattr(tools, "OBDConnection", lambda **kwargs: _FakeToolConnection(False))
     monkeypatch.setattr(tools, "scan_ports", lambda: [])
 
@@ -391,7 +399,9 @@ def test_run_direct_tool_handles_connection_failure(monkeypatch: pytest.MonkeyPa
 def test_run_direct_tool_returns_error_for_unknown_tool(monkeypatch: pytest.MonkeyPatch) -> None:
     console = Console(file=None)
     args = argparse.Namespace(port=None, protocol=None, baudrate=115200, timeout=1)
-    monkeypatch.setattr(tools, "load_vehicle_profile", lambda: VehicleProfile(2018, "Ford", "F-150"))
+    monkeypatch.setattr(
+        tools, "load_vehicle_profile", lambda: VehicleProfile(2018, "Ford", "F-150")
+    )
     monkeypatch.setattr(tools, "OBDConnection", lambda **kwargs: _FakeToolConnection(True))
     monkeypatch.setattr(tools, "SessionLog", _FakeSessionLog)
     monkeypatch.setattr(tools, "scan_ports", lambda: [])
@@ -579,9 +589,7 @@ def test_show_health_snapshot_renders_summary(monkeypatch: pytest.MonkeyPatch) -
 def test_show_live_sensors_captures_one_sample(monkeypatch: pytest.MonkeyPatch) -> None:
     console = Console(file=None)
     log = _FakeSessionLog("sensors", None)
-    snapshot = {
-        "RPM": SensorValue("RPM", "750", "rpm", datetime(2026, 5, 22, 1, 2, 3), True)
-    }
+    snapshot = {"RPM": SensorValue("RPM", "750", "rpm", datetime(2026, 5, 22, 1, 2, 3), True)}
 
     class FakePoller:
         def __init__(self, connection: object, interval: float) -> None:
@@ -617,9 +625,7 @@ def test_show_live_sensors_with_graphs_and_keyboard_interrupt(
 ) -> None:
     console = Console(record=True)
     log = _FakeSessionLog("sensors", None)
-    snapshot = {
-        "RPM": SensorValue("RPM", "750", "rpm", datetime(2026, 5, 22, 1, 2, 3), True)
-    }
+    snapshot = {"RPM": SensorValue("RPM", "750", "rpm", datetime(2026, 5, 22, 1, 2, 3), True)}
 
     class FakePoller:
         def __init__(self, connection: object, interval: float) -> None:
@@ -680,10 +686,14 @@ def test_readiness_rows_handles_unsupported_exception_and_empty_response() -> No
         {"source": "STATUS", "monitor": "command", "available": False, "complete": False}
     ]
 
-    failing_conn = SimpleNamespace(supported_commands={command}, query=lambda command: (_ for _ in ()).throw(RuntimeError()))
+    failing_conn = SimpleNamespace(
+        supported_commands={command}, query=lambda command: (_ for _ in ()).throw(RuntimeError())
+    )
     assert tools._readiness_rows(failing_conn, "STATUS", command) == []
 
-    empty_conn = SimpleNamespace(supported_commands={command}, query=lambda command: _Response(None, null=True))
+    empty_conn = SimpleNamespace(
+        supported_commands={command}, query=lambda command: _Response(None, null=True)
+    )
     assert tools._readiness_rows(empty_conn, "STATUS", command) == []
 
 

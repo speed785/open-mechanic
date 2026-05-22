@@ -166,8 +166,12 @@ def main(argv: list[str] | None = None) -> int:
         cmd = subparsers.add_parser(name, help=f"Run {name} tool")
         _add_connection_args(cmd)
         if name == "sensors":
-            cmd.add_argument("--samples", type=int, default=0, help="Samples to capture; 0 runs until Ctrl-C")
-            cmd.add_argument("--interval", type=float, default=1.0, help="Refresh interval in seconds")
+            cmd.add_argument(
+                "--samples", type=int, default=0, help="Samples to capture; 0 runs until Ctrl-C"
+            )
+            cmd.add_argument(
+                "--interval", type=float, default=1.0, help="Refresh interval in seconds"
+            )
             cmd.add_argument("--no-graphs", action="store_true", help="Hide live sensor graphs")
 
     args = parser.parse_args(argv)
@@ -187,8 +191,12 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _add_connection_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--port", default=None, help="Serial port override, for example /dev/ttyUSB0")
-    parser.add_argument("--protocol", default=None, help="OBD protocol override, for example 6 for CAN 11/500")
+    parser.add_argument(
+        "--port", default=None, help="Serial port override, for example /dev/ttyUSB0"
+    )
+    parser.add_argument(
+        "--protocol", default=None, help="OBD protocol override, for example 6 for CAN 11/500"
+    )
     parser.add_argument("--timeout", type=float, default=10.0, help="Connection timeout in seconds")
     parser.add_argument("--baudrate", type=int, default=115200, help="Serial baudrate")
 
@@ -219,7 +227,6 @@ def run_tools_menu(args: argparse.Namespace, console: Console) -> int:
         if status != 0:
             return status
         Prompt.ask("Press Enter to return to tools", default="")
-
 
 
 def _select_menu_item(console: Console, profile: VehicleProfile | None, selected: int) -> int:
@@ -325,7 +332,11 @@ def run_direct_tool(
     log = SessionLog(tool_name, active_profile)
     log.write(
         "connection",
-        {"port": connection.get_port(), "protocol": protocol, "supported_commands": _supported_count(raw_conn)},
+        {
+            "port": connection.get_port(),
+            "protocol": protocol,
+            "supported_commands": _supported_count(raw_conn),
+        },
     )
 
     try:
@@ -370,7 +381,6 @@ def prompt_vehicle_profile(console: Console) -> VehicleProfile:
     save_vehicle_profile(profile)
     console.print(f"[green]Saved profile locally:[/green] {PROFILE_PATH}")
     return profile
-
 
 
 def select_vehicle_make(console: Console) -> str:
@@ -467,7 +477,10 @@ def show_profile(console: Console, profile: VehicleProfile | None = None) -> Non
         table.add_row("Status", "[yellow]not set[/yellow]")
     else:
         table.add_row("Vehicle", active_profile.label)
-        table.add_row("Mileage", str(active_profile.mileage) if active_profile.mileage else "[dim]not set[/dim]")
+        table.add_row(
+            "Mileage",
+            str(active_profile.mileage) if active_profile.mileage else "[dim]not set[/dim]",
+        )
         table.add_row("Storage", str(PROFILE_PATH))
     console.print(table)
 
@@ -602,12 +615,22 @@ def _query_named_commands(conn: obd.OBD, command_names: list[str]) -> list[dict[
             continue
         label = SENSOR_LABELS.get(name, name.replace("DTC_", "").replace("_", " ").title())
         if command not in conn.supported_commands:
-            rows.append({"name": name, "label": label, "value": "N/A", "unit": "", "status": "unsupported"})
+            rows.append(
+                {"name": name, "label": label, "value": "N/A", "unit": "", "status": "unsupported"}
+            )
             continue
         try:
             response = conn.query(command)
         except Exception as exc:
-            rows.append({"name": name, "label": label, "value": "N/A", "unit": "", "status": f"error: {exc}"})
+            rows.append(
+                {
+                    "name": name,
+                    "label": label,
+                    "value": "N/A",
+                    "unit": "",
+                    "status": f"error: {exc}",
+                }
+            )
             continue
         value, unit = _format_response(response)
         status = "ok" if value != "N/A" else "no data"
@@ -628,9 +651,18 @@ def _readiness_rows(conn: obd.OBD, source: str, command: object) -> list[dict[st
     value = response.value
     rows: list[dict[str, Any]] = []
     if hasattr(value, "MIL"):
-        rows.append({"source": source, "monitor": "MIL", "available": True, "complete": not bool(value.MIL)})
+        rows.append(
+            {"source": source, "monitor": "MIL", "available": True, "complete": not bool(value.MIL)}
+        )
     if hasattr(value, "DTC_count"):
-        rows.append({"source": source, "monitor": "DTC count", "available": True, "complete": int(value.DTC_count) == 0})
+        rows.append(
+            {
+                "source": source,
+                "monitor": "DTC count",
+                "available": True,
+                "complete": int(value.DTC_count) == 0,
+            }
+        )
 
     items = sorted(getattr(value, "__dict__", {}).items(), key=lambda item: str(item[0]))
     for name, test in items:
@@ -676,7 +708,6 @@ def _sensor_payload(snapshot: dict[str, SensorValue]) -> dict[str, Any]:
         }
         for name, sensor in snapshot.items()
     }
-
 
 
 def _update_sensor_history(
