@@ -16,7 +16,7 @@ This document captures the current repository status and the most useful next im
 
 These checks were run locally with `uv` using Python 3.11:
 
-- `uv run --extra dev pytest --cov=open_mechanic --cov-report=term-missing`: pass, 117 tests, 100% line coverage.
+- `uv run --extra dev pytest`: pass, 117 tests, 100% line coverage.
 - `uv run --extra dev ruff check src scripts tests`: pass.
 - `uv run --extra dev mypy src`: pass.
 - `cd website && npm ci && npm run build`: pass.
@@ -53,12 +53,12 @@ Environment note: the system `python3` is Apple Python 3.9.6, below the project 
 
 - Replace placeholder clone URLs with `https://github.com/speed785/open-mechanic`. DONE
 - Make CI typecheck install the package with declared dependencies, for example `pip install -e ".[dev,api]"`, instead of installing only `mypy anthropic`. DONE
-- Decide whether mypy should be strict now. `AGENTS.md` says strict, while `pyproject.toml` sets `strict = false`.
-- Implement or remove `scripts/diagnose.py --no-cache`; it is parsed but does not currently affect `DiagnosticEngine`.
-- Add tests around `DiagnosticEngine` with mocked Anthropic responses: valid JSON, fenced JSON, non-object JSON, missing fields, bad field types, API errors, cache behavior, and disclaimer injection.
-- Verify whether `SensorPoller` should use `getattr(obd.commands, name, None)` instead of membership checks against `obd.commands`.
-- Add a website development note covering `cd website`, `npm ci`, `npm run build`, and Pages deployment.
-- Add Open Graph/Twitter metadata to the website and verify asset paths under the GitHub Pages `/open-mechanic/` base path.
+- Decide whether mypy should be strict now. DONE
+- Implement or remove `scripts/diagnose.py --no-cache`; it is parsed but does not currently affect `DiagnosticEngine`. DONE
+- Add tests around `DiagnosticEngine` with mocked Anthropic responses: valid JSON, fenced JSON, non-object JSON, missing fields, bad field types, API errors, cache behavior, and disclaimer injection. DONE
+- Verify whether `SensorPoller` should use `getattr(obd.commands, name, None)` instead of membership checks against `obd.commands`. DONE
+- Add a website development note covering `cd website`, `npm ci`, `npm run build`, and Pages deployment. DONE
+- Add Open Graph/Twitter metadata to the website and verify asset paths under the GitHub Pages `/open-mechanic/` base path. DONE
 
 ## Suggested Milestones
 

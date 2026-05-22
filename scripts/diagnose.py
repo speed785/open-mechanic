@@ -411,7 +411,7 @@ def main() -> int:  # noqa: PLR0911
             transient=True,
         ) as progress:
             _ = progress.add_task("Analyzing with AI...", total=None)
-            result = engine.diagnose(vehicle, dtcs, snapshot)
+            result = engine.diagnose(vehicle, dtcs, snapshot, bypass_cache=args.no_cache)
 
     except ValueError as exc:
         console.print(

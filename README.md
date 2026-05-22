@@ -71,8 +71,11 @@ cp .env.example .env
 python scripts/test_connection.py
 # Tip: if connection hangs, your car likely uses CAN — add OBD_PROTOCOL=6 to .env
 
-# AI diagnosis (Phase 3 CLI — coming soon)
-# For now, use the Python API directly — see docs/
+# Open the read-only tools menu
+open-mechanic
+
+# Or run a one-shot AI diagnosis
+python scripts/diagnose.py --vehicle "2018 Ford F-150" --mileage 85000 --protocol 6
 ```
 
 ---
@@ -116,6 +119,24 @@ python scripts/test_connection.py
 | CLI | Python + `rich` |
 | Hosting | GitHub Pages website now; Docker planned |
 | CI/CD | GitHub Actions |
+
+---
+
+## Current vs Planned
+
+Available now:
+
+- Read-only CLI tools menu with vehicle profile, live sensors, DTCs, readiness, freeze-frame, and health snapshot views
+- One-shot AI diagnosis script backed by Anthropic Claude
+- SQLite data models and local JSON session logs
+- Vite/TypeScript public website
+
+Planned:
+
+- FastAPI REST backend
+- Interactive web dashboard and repair guide viewer
+- Docker/self-hosted deployment package
+- Additional AI provider backends beyond Anthropic
 
 ---
 

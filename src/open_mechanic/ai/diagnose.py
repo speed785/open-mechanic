@@ -125,12 +125,14 @@ class DiagnosticEngine:
         vehicle: VehicleProfile,
         dtcs: list[DTCCode],
         snapshot: dict[str, Any],
+        *,
+        bypass_cache: bool = False,
     ) -> DiagnosisResult:
         vehicle_str = f"{vehicle.year} {vehicle.make} {vehicle.model} ({vehicle.mileage:,} miles)"
         dtc_codes = [dtc.code for dtc in dtcs]
 
         key = self._diagnostic_cache_key(dtc_codes, vehicle_str, snapshot)
-        if self._is_cache_valid(key):
+        if not bypass_cache and self._is_cache_valid(key):
             cached_result, _ = self._cache[key]
             return replace(cached_result, cached=True)
 

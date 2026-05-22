@@ -30,7 +30,7 @@ cp .env.example .env
 Run the test suite:
 
 ```bash
-pytest tests/ -v
+pytest
 ```
 
 Run the linter:
@@ -43,7 +43,15 @@ ruff format src/ scripts/
 Run type checking:
 
 ```bash
-mypy src/ --ignore-missing-imports
+mypy src/
+```
+
+Work on the website:
+
+```bash
+cd website
+npm ci
+npm run build
 ```
 
 ---

@@ -86,7 +86,7 @@ def format_sensor_snapshot(snapshot: dict[str, Any]) -> str:
         if hasattr(sensor, "supported"):
             supported: bool = bool(sensor.supported)
             value: str = str(sensor.value)
-            unit: str | None = sensor.unit  # type: ignore[assignment]
+            unit: str | None = sensor.unit
         elif isinstance(sensor, dict):
             supported = bool(sensor.get("supported", True))
             value = str(sensor.get("value", "N/A"))

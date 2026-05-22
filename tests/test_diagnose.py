@@ -108,6 +108,25 @@ def test_diagnose_reuses_cache_for_same_complete_input() -> None:
     assert len(fake_client.messages.calls) == 1
 
 
+def test_diagnose_can_bypass_cache_for_same_complete_input() -> None:
+    engine, fake_client = _engine_with_responses(
+        [_diagnosis_json("first"), _diagnosis_json("second")]
+    )
+
+    first = engine.diagnose(_vehicle(), _dtcs(), {"RPM": {"value": "750", "supported": True}})
+    second = engine.diagnose(
+        _vehicle(),
+        _dtcs(),
+        {"RPM": {"value": "750", "supported": True}},
+        bypass_cache=True,
+    )
+
+    assert first.summary == "first"
+    assert second.summary == "second"
+    assert second.cached is False
+    assert len(fake_client.messages.calls) == 2
+
+
 def test_diagnose_returns_disclaimer_fallback_for_non_object_json() -> None:
     engine, _ = _engine_with_responses(["[]"])
 
