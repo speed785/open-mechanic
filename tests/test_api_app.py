@@ -10,6 +10,7 @@ from open_mechanic.api.schemas import (
     DiagnosisResponse,
     DTCResponse,
     HealthSnapshotResponse,
+    Mode6TestResponse,
     SensorReadingResponse,
     VehicleProfileResponse,
 )
@@ -56,6 +57,24 @@ class FakeService:
             )
         ]
 
+    def get_mode6(self) -> list[Mode6TestResponse]:
+        return [
+            Mode6TestResponse(
+                monitor="MONITOR_MISFIRE_CYLINDER_1",
+                monitor_description="Misfire Cylinder 1 Data",
+                category="misfire",
+                test_id=1,
+                test_name="Misfire counts",
+                description="Misfire counts",
+                value="12",
+                minimum="0",
+                maximum="5",
+                unit="count",
+                passed=False,
+                status="failed",
+            )
+        ]
+
     def get_snapshot(self) -> HealthSnapshotResponse:
         return HealthSnapshotResponse(
             connected=True,
@@ -63,6 +82,7 @@ class FakeService:
             protocol="CAN",
             sensors=[],
             dtcs=self.get_dtcs(),
+            mode6=self.get_mode6(),
         )
 
     def diagnose(self, request: DiagnoseRequest) -> DiagnosisResponse:
@@ -117,6 +137,15 @@ def test_dtc_endpoint_returns_fault_codes() -> None:
     assert response.json()[0]["code"] == "P0420"
 
 
+def test_mode6_endpoint_returns_monitor_tests() -> None:
+    client = TestClient(create_app(service=FakeService()))
+
+    response = client.get("/api/mode6")
+
+    assert response.status_code == 200
+    assert response.json()[0]["monitor"] == "MONITOR_MISFIRE_CYLINDER_1"
+
+
 def test_snapshot_endpoint_returns_combined_snapshot() -> None:
     client = TestClient(create_app(service=FakeService()))
 
@@ -124,6 +153,7 @@ def test_snapshot_endpoint_returns_combined_snapshot() -> None:
 
     assert response.status_code == 200
     assert response.json()["dtcs"][0]["severity"] == "warning"
+    assert response.json()["mode6"][0]["status"] == "failed"
 
 
 def test_diagnose_endpoint_passes_request_to_service() -> None:

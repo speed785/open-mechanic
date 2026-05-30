@@ -27,6 +27,7 @@ from open_mechanic.local_store import (
     load_vehicle_profile,
     save_vehicle_profile,
 )
+from open_mechanic.mode6 import MisfireSummary, Mode6Reader, Mode6TestResult, diagnose_misfires
 from open_mechanic.reader import SENSOR_COMMANDS, SensorPoller, SensorValue
 
 VERSION = "0.1.0"
@@ -147,6 +148,7 @@ MENU_ITEMS: list[tuple[str, str]] = [
     ("dtcs", "Fault Codes"),
     ("readiness", "Readiness Monitors"),
     ("freeze-frame", "Freeze Frame"),
+    ("mode6", "Mode 6 Monitors"),
     ("snapshot", "Health Snapshot"),
     ("quit", "Exit"),
 ]
@@ -162,7 +164,7 @@ def main(argv: list[str] | None = None) -> int:
     tools_parser = subparsers.add_parser("tools", help="Open the read-only tools menu")
     _add_connection_args(tools_parser)
 
-    for name in ("sensors", "dtcs", "readiness", "freeze-frame", "snapshot", "profile"):
+    for name in ("sensors", "dtcs", "readiness", "freeze-frame", "mode6", "snapshot", "profile"):
         cmd = subparsers.add_parser(name, help=f"Run {name} tool")
         _add_connection_args(cmd)
         if name == "sensors":
@@ -358,6 +360,8 @@ def run_direct_tool(
             show_readiness(console, connection, log)
         elif tool_name == "freeze-frame":
             show_freeze_frame(console, connection, log)
+        elif tool_name == "mode6":
+            show_mode6(console, connection, log)
         elif tool_name == "snapshot":
             show_health_snapshot(console, connection, log)
         else:
@@ -574,10 +578,27 @@ def show_freeze_frame(console: Console, connection: OBDConnection, log: SessionL
     console.print(table)
 
 
+def show_mode6(console: Console, connection: OBDConnection, log: SessionLog) -> None:
+    reader = Mode6Reader(connection)
+    mode6_results = reader.get_results()
+    misfire_summary = diagnose_misfires(mode6_results, DTCReader(connection).get_dtcs(), {})
+    log.write(
+        "mode6",
+        {
+            "results": [asdict(result) for result in mode6_results],
+            "misfire_summary": asdict(misfire_summary),
+        },
+    )
+    console.print(_misfire_summary_table(misfire_summary))
+    console.print(_mode6_table(mode6_results))
+
+
 def show_health_snapshot(console: Console, connection: OBDConnection, log: SessionLog) -> None:
     conn = _require_raw_connection(connection)
     rows = _query_named_commands(conn, HEALTH_COMMANDS)
     dtcs = DTCReader(connection).get_dtcs()
+    mode6_results = Mode6Reader(connection).get_results()
+    misfire_summary = diagnose_misfires(mode6_results, dtcs, {})
     readiness = []
     status_cmd = getattr(obd.commands, "STATUS", None)
     if status_cmd is not None:
@@ -585,7 +606,13 @@ def show_health_snapshot(console: Console, connection: OBDConnection, log: Sessi
 
     log.write(
         "health_snapshot",
-        {"sensors": rows, "dtcs": [asdict(dtc) for dtc in dtcs], "readiness": readiness},
+        {
+            "sensors": rows,
+            "dtcs": [asdict(dtc) for dtc in dtcs],
+            "readiness": readiness,
+            "mode6": [asdict(result) for result in mode6_results],
+            "misfire_summary": asdict(misfire_summary),
+        },
     )
 
     sensor_table = Table(title="Health Snapshot", border_style="dim")
@@ -603,8 +630,48 @@ def show_health_snapshot(console: Console, connection: OBDConnection, log: Sessi
     summary.add_row("Fault codes", str(len(dtcs)))
     incomplete = [row for row in readiness if row.get("available") and not row.get("complete")]
     summary.add_row("Incomplete readiness monitors", str(len(incomplete)))
+    failed_mode6 = [result for result in mode6_results if result.passed is False]
+    summary.add_row("Mode 6 monitor tests", str(len(mode6_results)))
+    summary.add_row("Failed Mode 6 tests", str(len(failed_mode6)))
+    summary.add_row("Misfire status", misfire_summary.status.replace("_", " "))
     summary.add_row("Local session directory", str(SESSIONS_DIR))
     console.print(summary)
+
+
+def _mode6_table(results: list[Mode6TestResult]) -> Table:
+    table = Table(title="Mode 6 Monitor Tests", border_style="dim")
+    table.add_column("Monitor", style="bold", no_wrap=True)
+    table.add_column("Test")
+    table.add_column("Value", justify="right")
+    table.add_column("Range")
+    table.add_column("Status")
+    if not results:
+        table.add_row("Mode 6", "No supported Mode 6 monitor tests reported", "N/A", "", "no data")
+    else:
+        for result in results:
+            unit = f" {result.unit}" if result.unit else ""
+            table.add_row(
+                result.monitor,
+                result.test_name,
+                f"{result.value}{unit}",
+                f"{result.minimum}..{result.maximum}",
+                result.status,
+            )
+    return table
+
+
+def _misfire_summary_table(summary: MisfireSummary) -> Table:
+    table = Table(title="Misfire Diagnosis", border_style="blue")
+    table.add_column("Source", style="bold", no_wrap=True)
+    table.add_column("Severity")
+    table.add_column("Detail")
+    if not summary.findings:
+        table.add_row("summary", "info", summary.summary)
+    else:
+        for finding in summary.findings:
+            cylinder = f" Cylinder {finding.cylinder}." if finding.cylinder is not None else ""
+            table.add_row(finding.source, finding.severity, f"{cylinder} {finding.detail}".strip())
+    return table
 
 
 def _query_named_commands(conn: obd.OBD, command_names: list[str]) -> list[dict[str, str]]:

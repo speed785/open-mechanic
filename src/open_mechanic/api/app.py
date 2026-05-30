@@ -8,6 +8,7 @@ from .schemas import (
     DTCResponse,
     HealthResponse,
     HealthSnapshotResponse,
+    Mode6TestResponse,
     VehicleProfileResponse,
 )
 from .services import DiagnosticAPIService
@@ -32,6 +33,10 @@ def create_app(service: DiagnosticAPIService | None = None) -> FastAPI:
     @app.get("/api/dtc", response_model=list[DTCResponse])
     def dtc() -> list[DTCResponse]:
         return api_service.get_dtcs()
+
+    @app.get("/api/mode6", response_model=list[Mode6TestResponse])
+    def mode6() -> list[Mode6TestResponse]:
+        return api_service.get_mode6()
 
     @app.get("/api/snapshot", response_model=HealthSnapshotResponse)
     def snapshot() -> HealthSnapshotResponse:

@@ -130,7 +130,8 @@ uvicorn open_mechanic.api:create_app --factory --reload
 Available now:
 
 - Read-only CLI tools menu with vehicle profile, live sensors, DTCs, readiness, freeze-frame, and health snapshot views
-- Read-only FastAPI backend for vehicle profile, live sensors, DTCs, health snapshot, and diagnosis
+- Mode 6 onboard monitor test reads, including best-effort misfire indicators before a confirmed DTC
+- Read-only FastAPI backend for vehicle profile, live sensors, DTCs, Mode 6, health snapshot, and diagnosis
 - One-shot AI diagnosis script backed by Anthropic Claude
 - SQLite data models and local JSON session logs
 - Vite/TypeScript public website
@@ -166,7 +167,8 @@ GET  /api/health           — service liveness
 GET  /api/vehicle          — local vehicle profile
 GET  /api/live             — one-shot live sensor snapshot
 GET  /api/dtc              — current fault codes
-GET  /api/snapshot         — combined connection, sensor, and DTC snapshot
+GET  /api/mode6            — supported Mode 6 onboard monitor test results
+GET  /api/snapshot         — combined connection, sensor, DTC, Mode 6, and misfire snapshot
 POST /api/diagnose         — trigger AI diagnosis
 ```
 
@@ -177,6 +179,8 @@ See [docs/API.md](docs/API.md) for request/response contracts and planned dashbo
 ## OBD-II Coverage
 
 **Standard OBD-II** (all 1996+ vehicles): DTC codes, RPM, coolant temp, O2 sensors, fuel trim, vehicle speed, emissions readiness monitors, MAF, throttle position, battery voltage.
+
+**Mode 6 monitor tests**: When the vehicle and adapter expose Mode 6 data, open-mechanic reads supported onboard monitor tests for oxygen sensors, catalyst, EVAP, EGR, fuel system, boost, and misfire monitors. Misfire diagnosis combines failed Mode 6 misfire monitors, P030x/P031x DTCs, and supporting fuel-trim evidence. Mode 6 support is vehicle-dependent and most useful on CAN vehicles; missing Mode 6 data is reported as unsupported/no data, not as a fault.
 
 **Ford extended PIDs** *(future)*: Requires OBDLink EX + community-documented PIDs from FORScan forums. Covers transmission temp, TPMS, ABS, body modules.
 

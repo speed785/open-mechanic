@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class HealthResponse(BaseModel):
@@ -34,12 +34,45 @@ class DTCResponse(BaseModel):
     category: str
 
 
+class Mode6TestResponse(BaseModel):
+    monitor: str
+    monitor_description: str
+    category: str
+    test_id: int | None
+    test_name: str
+    description: str
+    value: str
+    minimum: str
+    maximum: str
+    unit: str | None
+    passed: bool | None
+    status: str
+
+
+class MisfireFindingResponse(BaseModel):
+    source: str
+    severity: str
+    detail: str
+    cylinder: int | None = None
+    value: str | None = None
+    threshold: str | None = None
+
+
+class MisfireSummaryResponse(BaseModel):
+    supported: bool
+    status: str
+    summary: str
+    findings: list[MisfireFindingResponse] = Field(default_factory=list)
+
+
 class HealthSnapshotResponse(BaseModel):
     connected: bool
     port: str | None
     protocol: str | None
     sensors: list[SensorReadingResponse]
     dtcs: list[DTCResponse]
+    mode6: list[Mode6TestResponse] = Field(default_factory=list)
+    misfire_summary: MisfireSummaryResponse | None = None
 
 
 class DiagnoseRequest(BaseModel):

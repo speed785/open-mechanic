@@ -9,6 +9,7 @@ from typing import Any
 
 from open_mechanic.db.models import VehicleProfile
 from open_mechanic.dtc import DTCCode
+from open_mechanic.mode6 import MisfireSummary, Mode6TestResult
 
 DIAGNOSTIC_SYSTEM_PROMPT: str = """\
 You are an expert automotive technician with deep knowledge of OBD-II diagnostics, \
@@ -56,8 +57,11 @@ advice. Consult a qualified mechanic before making safety-critical repairs."
 expose that PID. Do not treat missing sensor data as a fault; simply work with \
 what is available.
 4. If multiple DTCs are present, consider their combined effect on severity.
-5. Provide at least two likely causes and at least two repair steps.
-6. Cost estimates should reflect realistic US market labour + parts ranges.
+5. Mode 6 monitor failures are pre-DTC evidence. Use them as supporting evidence,
+especially for misfires, catalyst efficiency, oxygen sensors, fuel system, EVAP,
+and EGR monitors. Do not treat absent Mode 6 data as a fault.
+6. Provide at least two likely causes and at least two repair steps.
+7. Cost estimates should reflect realistic US market labour + parts ranges.
 """
 
 
@@ -106,10 +110,54 @@ def format_sensor_snapshot(snapshot: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def format_mode6_results(results: list[Mode6TestResult]) -> str:
+    """Format Mode 6 monitor test results for AI diagnostic context."""
+    if not results:
+        return "  (no Mode 6 monitor data available)"
+
+    failed = [result for result in results if result.passed is False]
+    visible = failed if failed else results[:20]
+    lines: list[str] = []
+    for result in visible:
+        unit = f" {result.unit}" if result.unit else ""
+        lines.append(
+            "  - "
+            f"{result.monitor}: {result.test_name} [{result.status}] "
+            f"value={result.value}{unit}, range={result.minimum}..{result.maximum}"
+        )
+
+    hidden_count = len(results) - len(visible)
+    if hidden_count > 0:
+        lines.append(f"  ({hidden_count} additional passed/unchanged Mode 6 tests omitted)")
+    return "\n".join(lines)
+
+
+def format_misfire_summary(summary: MisfireSummary | None) -> str:
+    """Format distilled misfire evidence for AI diagnostic context."""
+    if summary is None:
+        return "  (no misfire analysis available)"
+
+    lines = [f"  Status: {summary.status}", f"  Summary: {summary.summary}"]
+    if not summary.findings:
+        return "\n".join(lines)
+
+    lines.append("  Findings:")
+    for finding in summary.findings:
+        cylinder = f" cylinder={finding.cylinder}" if finding.cylinder is not None else ""
+        value = f" value={finding.value}" if finding.value is not None else ""
+        threshold = f" threshold={finding.threshold}" if finding.threshold is not None else ""
+        lines.append(
+            f"  - {finding.source}/{finding.severity}:{cylinder}{value}{threshold} {finding.detail}"
+        )
+    return "\n".join(lines)
+
+
 def format_diagnostic_prompt(
     vehicle: VehicleProfile,
     dtcs: list[DTCCode],
     snapshot: dict[str, Any],
+    mode6_results: list[Mode6TestResult] | None = None,
+    misfire_summary: MisfireSummary | None = None,
 ) -> str:
     """Build the user message to send to Claude for a diagnostic session.
 
@@ -140,10 +188,14 @@ def format_diagnostic_prompt(
         fault_section = "Fault Codes: None"
 
     sensor_section = f"Live Sensor Data:\n{format_sensor_snapshot(snapshot)}"
+    mode6_section = f"Mode 6 Monitor Data:\n{format_mode6_results(mode6_results or [])}"
+    misfire_section = f"Misfire Indicators:\n{format_misfire_summary(misfire_summary)}"
 
     return (
         f"{vehicle_line}\n\n"
         f"{fault_section}\n\n"
         f"{sensor_section}\n\n"
+        f"{mode6_section}\n\n"
+        f"{misfire_section}\n\n"
         "Please analyze this data and provide your diagnosis as JSON."
     )

@@ -1,6 +1,6 @@
 # API Contract
 
-Last reviewed: 2026-05-22
+Last reviewed: 2026-05-30
 
 The FastAPI backend is a read-only Phase 3 foundation for dashboards, local automations, and future self-hosted deployments. It wraps the existing OBD, DTC, vehicle profile, and AI diagnostic modules without requiring web callers to know those internals.
 
@@ -21,7 +21,8 @@ Hardware calls use `OPEN_MECHANIC_API_OBD_TIMEOUT=3.0` and `OPEN_MECHANIC_API_OB
 | `GET` | `/api/vehicle` | Local vehicle profile from `local_data/vehicle_profile.json`. |
 | `GET` | `/api/live` | One-shot live sensor snapshot. |
 | `GET` | `/api/dtc` | Current fault codes. |
-| `GET` | `/api/snapshot` | Combined connection, sensor, and DTC snapshot. |
+| `GET` | `/api/mode6` | Supported Mode 6 onboard monitor test results. |
+| `GET` | `/api/snapshot` | Combined connection, sensor, DTC, Mode 6, and misfire snapshot. |
 | `POST` | `/api/diagnose` | AI diagnosis using the current snapshot and submitted vehicle details. |
 
 ## Response Shapes
@@ -63,8 +64,60 @@ Hardware calls use `OPEN_MECHANIC_API_OBD_TIMEOUT=3.0` and `OPEN_MECHANIC_API_OB
       "timestamp": "2026-05-22T01:02:03"
     }
   ],
-  "dtcs": []
+  "dtcs": [],
+  "mode6": [
+    {
+      "monitor": "MONITOR_MISFIRE_CYLINDER_1",
+      "monitor_description": "Misfire Cylinder 1 Data",
+      "category": "misfire",
+      "test_id": 1,
+      "test_name": "Misfire counts",
+      "description": "Misfire counts",
+      "value": "12",
+      "minimum": "0",
+      "maximum": "5",
+      "unit": "count",
+      "passed": false,
+      "status": "failed"
+    }
+  ],
+  "misfire_summary": {
+    "supported": true,
+    "status": "possible_misfire",
+    "summary": "Mode 6 misfire monitor failures were reported before a confirmed DTC.",
+    "findings": [
+      {
+        "source": "mode6",
+        "severity": "warning",
+        "detail": "Misfire Cylinder 1 Data failed Misfire counts",
+        "cylinder": 1,
+        "value": "12",
+        "threshold": "0..5"
+      }
+    ]
+  }
 }
+```
+
+`GET /api/mode6`
+
+```json
+[
+  {
+    "monitor": "MONITOR_CATALYST_B1",
+    "monitor_description": "Catalyst Monitor Bank 1",
+    "category": "catalyst",
+    "test_id": 1,
+    "test_name": "Rich to lean sensor threshold voltage",
+    "description": "Rich to lean sensor threshold voltage",
+    "value": "0.80",
+    "minimum": "0.10",
+    "maximum": "1.00",
+    "unit": "V",
+    "passed": true,
+    "status": "passed"
+  }
+]
 ```
 
 `GET /api/dtc`
@@ -121,6 +174,8 @@ Response:
 - Treat `/api/live` as a polling endpoint for now. A streaming endpoint can be added later without changing the snapshot shape.
 - Show `connected=false` as a normal no-adapter state, not as a dashboard crash.
 - Read `severity` and `category` as display hints. Do not use either value to clear codes or recommend safety-critical action without the disclaimer.
+- Mode 6 is best-effort and vehicle-dependent. Missing Mode 6 data means unsupported/no data, not a failed monitor.
+- `misfire_summary` is a triage aid built from Mode 6 misfire monitors, P030x/P031x DTCs, and supporting live sensor clues. It is not a substitute for mechanical confirmation.
 - The current API is local-first. Auth, sessions, history, and hosted multi-user access are not implemented.
 
 ## Planned Endpoints

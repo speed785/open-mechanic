@@ -8,6 +8,7 @@ from open_mechanic.api.schemas import DiagnoseRequest
 from open_mechanic.api.services import DiagnosticAPIService, _default_connection
 from open_mechanic.dtc import DTCCode
 from open_mechanic.local_store import VehicleProfile
+from open_mechanic.mode6 import Mode6TestResult
 from open_mechanic.reader import SensorValue
 
 
@@ -68,9 +69,34 @@ class FakeDTCReader:
         ]
 
 
+class FakeMode6Reader:
+    def __init__(self, connection: FakeConnection) -> None:
+        self.connection = connection
+
+    def get_results(self) -> list[Mode6TestResult]:
+        return [
+            Mode6TestResult(
+                monitor="MONITOR_MISFIRE_CYLINDER_1",
+                monitor_description="Misfire Cylinder 1 Data",
+                category="misfire",
+                test_id=1,
+                test_name="Misfire counts",
+                description="Misfire counts",
+                value="12",
+                minimum="0",
+                maximum="5",
+                unit="count",
+                passed=False,
+                status="failed",
+            )
+        ]
+
+
 class FakeEngine:
     def __init__(self) -> None:
-        self.calls: list[tuple[Any, list[DTCCode], dict[str, Any], bool]] = []
+        self.calls: list[
+            tuple[Any, list[DTCCode], dict[str, Any], list[Mode6TestResult], Any, bool]
+        ] = []
 
     def diagnose(
         self,
@@ -78,9 +104,13 @@ class FakeEngine:
         dtcs: list[DTCCode],
         sensor_snapshot: dict[str, Any],
         *,
+        mode6_results: list[Mode6TestResult] | None = None,
+        misfire_summary: Any = None,
         bypass_cache: bool = False,
     ) -> DiagnosisResult:
-        self.calls.append((vehicle, dtcs, sensor_snapshot, bypass_cache))
+        self.calls.append(
+            (vehicle, dtcs, sensor_snapshot, mode6_results or [], misfire_summary, bypass_cache)
+        )
         return DiagnosisResult(
             severity="warning",
             summary="Catalyst efficiency below threshold",
@@ -152,6 +182,23 @@ def test_get_dtcs_maps_codes_and_disconnects(monkeypatch: Any) -> None:
     assert connection.disconnected is True
 
 
+def test_get_mode6_maps_monitor_results_and_disconnects(monkeypatch: Any) -> None:
+    connection = FakeConnection()
+    monkeypatch.setattr("open_mechanic.api.services.Mode6Reader", FakeMode6Reader)
+    service = DiagnosticAPIService(connection_factory=lambda: connection)
+
+    results = service.get_mode6()
+
+    assert results[0].monitor == "MONITOR_MISFIRE_CYLINDER_1"
+    assert connection.disconnected is True
+
+
+def test_get_mode6_returns_empty_list_when_adapter_unavailable() -> None:
+    service = DiagnosticAPIService(connection_factory=lambda: FakeConnection(connects=False))
+
+    assert service.get_mode6() == []
+
+
 def test_snapshot_returns_empty_snapshot_when_adapter_unavailable() -> None:
     service = DiagnosticAPIService(connection_factory=lambda: FakeConnection(connects=False))
 
@@ -180,6 +227,7 @@ def test_snapshot_combines_sensors_and_dtcs(monkeypatch: Any) -> None:
     connection = FakeConnection()
     monkeypatch.setattr("open_mechanic.api.services.SensorPoller", FakeSensorPoller)
     monkeypatch.setattr("open_mechanic.api.services.DTCReader", FakeDTCReader)
+    monkeypatch.setattr("open_mechanic.api.services.Mode6Reader", FakeMode6Reader)
     service = DiagnosticAPIService(connection_factory=lambda: connection)
 
     snapshot = service.get_snapshot()
@@ -187,6 +235,9 @@ def test_snapshot_combines_sensors_and_dtcs(monkeypatch: Any) -> None:
     assert snapshot.connected is True
     assert snapshot.sensors[0].value == "750"
     assert snapshot.dtcs[0].code == "P0420"
+    assert snapshot.mode6[0].status == "failed"
+    assert snapshot.misfire_summary is not None
+    assert snapshot.misfire_summary.status == "possible_misfire"
     assert connection.disconnected is True
 
 
@@ -194,6 +245,7 @@ def test_diagnose_passes_vehicle_snapshot_and_cache_flag(monkeypatch: Any) -> No
     engine = FakeEngine()
     monkeypatch.setattr("open_mechanic.api.services.SensorPoller", FakeSensorPoller)
     monkeypatch.setattr("open_mechanic.api.services.DTCReader", FakeDTCReader)
+    monkeypatch.setattr("open_mechanic.api.services.Mode6Reader", FakeMode6Reader)
     service = DiagnosticAPIService(
         connection_factory=lambda: FakeConnection(),
         engine_factory=lambda: engine,
@@ -209,11 +261,13 @@ def test_diagnose_passes_vehicle_snapshot_and_cache_flag(monkeypatch: Any) -> No
         )
     )
 
-    vehicle, dtcs, sensor_snapshot, bypass_cache = engine.calls[0]
+    vehicle, dtcs, sensor_snapshot, mode6_results, misfire_summary, bypass_cache = engine.calls[0]
     assert result.summary == "Catalyst efficiency below threshold"
     assert vehicle.model == "F-150"
     assert dtcs[0].code == "P0420"
     assert sensor_snapshot["RPM"]["supported"] is True
+    assert mode6_results[0].passed is False
+    assert misfire_summary.status == "possible_misfire"
     assert bypass_cache is True
 
 
