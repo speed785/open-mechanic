@@ -10,6 +10,7 @@ from open_mechanic.ai import diagnose
 from open_mechanic.ai.diagnose import DISCLAIMER, DiagnosticEngine
 from open_mechanic.db.models import VehicleProfile
 from open_mechanic.dtc import DTCCode
+from open_mechanic.mode6 import MisfireSummary, Mode6TestResult
 
 
 @dataclass
@@ -93,6 +94,51 @@ def test_diagnose_cache_key_changes_when_sensor_snapshot_changes() -> None:
     assert first.summary == "first"
     assert second.summary == "second"
     assert second.cached is False
+    assert len(fake_client.messages.calls) == 2
+
+
+def test_diagnose_cache_key_changes_when_mode6_context_changes() -> None:
+    engine, fake_client = _engine_with_responses(
+        [_diagnosis_json("first"), _diagnosis_json("second")]
+    )
+    first_mode6 = [
+        Mode6TestResult(
+            monitor="MONITOR_MISFIRE_CYLINDER_1",
+            monitor_description="Misfire Cylinder 1 Data",
+            category="misfire",
+            test_id=1,
+            test_name="Misfire counts",
+            description="Misfire counts",
+            value="1",
+            minimum="0",
+            maximum="5",
+            unit="count",
+            passed=True,
+            status="passed",
+        )
+    ]
+    second_mode6 = [
+        Mode6TestResult(
+            monitor="MONITOR_MISFIRE_CYLINDER_1",
+            monitor_description="Misfire Cylinder 1 Data",
+            category="misfire",
+            test_id=1,
+            test_name="Misfire counts",
+            description="Misfire counts",
+            value="10",
+            minimum="0",
+            maximum="5",
+            unit="count",
+            passed=False,
+            status="failed",
+        )
+    ]
+
+    first = engine.diagnose(_vehicle(), _dtcs(), {}, mode6_results=first_mode6)
+    second = engine.diagnose(_vehicle(), _dtcs(), {}, mode6_results=second_mode6)
+
+    assert first.summary == "first"
+    assert second.summary == "second"
     assert len(fake_client.messages.calls) == 2
 
 
@@ -199,9 +245,21 @@ def test_strip_markdown_code_fences_handles_generic_fence() -> None:
 
 def test_normalize_for_cache_handles_lists_and_sensor_values() -> None:
     sensor = SimpleSensor(value=750, unit="rpm", supported=True)
+    misfire = MisfireSummary(
+        supported=True,
+        status="no_misfire_detected",
+        summary="clean",
+        findings=[],
+    )
 
-    assert diagnose._normalize_for_cache({"items": [sensor]}) == {
-        "items": [{"supported": True, "value": "750", "unit": "rpm"}]
+    assert diagnose._normalize_for_cache({"items": [sensor], "misfire": misfire}) == {
+        "items": [{"supported": True, "value": "750", "unit": "rpm"}],
+        "misfire": {
+            "supported": True,
+            "status": "no_misfire_detected",
+            "summary": "clean",
+            "findings": [],
+        },
     }
 
 

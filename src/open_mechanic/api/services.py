@@ -9,6 +9,13 @@ from open_mechanic.db.models import VehicleProfile as DiagnosticVehicleProfile
 from open_mechanic.dtc import DTCCode, DTCReader
 from open_mechanic.local_store import VehicleProfile as LocalVehicleProfile
 from open_mechanic.local_store import load_vehicle_profile
+from open_mechanic.mode6 import (
+    MisfireFinding,
+    MisfireSummary,
+    Mode6Reader,
+    Mode6TestResult,
+    diagnose_misfires,
+)
 from open_mechanic.reader import SensorPoller, SensorValue
 
 from .schemas import (
@@ -16,6 +23,9 @@ from .schemas import (
     DiagnosisResponse,
     DTCResponse,
     HealthSnapshotResponse,
+    MisfireFindingResponse,
+    MisfireSummaryResponse,
+    Mode6TestResponse,
     SensorReadingResponse,
     VehicleProfileResponse,
 )
@@ -86,6 +96,17 @@ class DiagnosticAPIService:
         finally:
             connection.disconnect()
 
+    def get_mode6(self) -> list[Mode6TestResponse]:
+        connection = self._connection_factory()
+        connected = connection.connect()
+        if not connected:
+            return []
+
+        try:
+            return _mode6_responses(Mode6Reader(connection).get_results())
+        finally:
+            connection.disconnect()
+
     def get_snapshot(self) -> HealthSnapshotResponse:
         connection = self._connection_factory()
         connected = connection.connect()
@@ -101,12 +122,18 @@ class DiagnosticAPIService:
         try:
             raw_connection = connection.get_connection()
             protocol = raw_connection.protocol_name() if raw_connection is not None else None
+            sensor_snapshot = SensorPoller(connection).get_snapshot()
+            dtcs = DTCReader(connection).get_dtcs()
+            mode6_results = Mode6Reader(connection).get_results()
+            misfire_summary = diagnose_misfires(mode6_results, dtcs, sensor_snapshot)
             return HealthSnapshotResponse(
                 connected=True,
                 port=connection.get_port(),
                 protocol=protocol,
-                sensors=_sensor_responses(SensorPoller(connection).get_snapshot()),
-                dtcs=_dtc_responses(DTCReader(connection).get_dtcs()),
+                sensors=_sensor_responses(sensor_snapshot),
+                dtcs=_dtc_responses(dtcs),
+                mode6=_mode6_responses(mode6_results),
+                misfire_summary=_misfire_summary_response(misfire_summary),
             )
         finally:
             connection.disconnect()
@@ -138,10 +165,34 @@ class DiagnosticAPIService:
             }
             for sensor in snapshot.sensors
         }
+        mode6_results = [
+            Mode6TestResult(
+                monitor=item.monitor,
+                monitor_description=item.monitor_description,
+                category=item.category,
+                test_id=item.test_id,
+                test_name=item.test_name,
+                description=item.description,
+                value=item.value,
+                minimum=item.minimum,
+                maximum=item.maximum,
+                unit=item.unit,
+                passed=item.passed,
+                status=item.status,
+            )
+            for item in snapshot.mode6
+        ]
+        misfire_summary = (
+            _misfire_summary_from_response(snapshot.misfire_summary)
+            if snapshot.misfire_summary is not None
+            else None
+        )
         result = self._engine_factory().diagnose(
             vehicle,
             dtcs,
             sensor_snapshot,
+            mode6_results=mode6_results,
+            misfire_summary=misfire_summary,
             bypass_cache=request.bypass_cache,
         )
         return DiagnosisResponse(
@@ -185,6 +236,64 @@ def _dtc_responses(dtcs: list[DTCCode]) -> list[DTCResponse]:
         )
         for dtc in dtcs
     ]
+
+
+def _mode6_responses(results: list[Mode6TestResult]) -> list[Mode6TestResponse]:
+    return [
+        Mode6TestResponse(
+            monitor=result.monitor,
+            monitor_description=result.monitor_description,
+            category=result.category,
+            test_id=result.test_id,
+            test_name=result.test_name,
+            description=result.description,
+            value=result.value,
+            minimum=result.minimum,
+            maximum=result.maximum,
+            unit=result.unit,
+            passed=result.passed,
+            status=result.status,
+        )
+        for result in results
+    ]
+
+
+def _misfire_summary_response(summary: MisfireSummary) -> MisfireSummaryResponse:
+    return MisfireSummaryResponse(
+        supported=summary.supported,
+        status=summary.status,
+        summary=summary.summary,
+        findings=[
+            MisfireFindingResponse(
+                source=finding.source,
+                severity=finding.severity,
+                detail=finding.detail,
+                cylinder=finding.cylinder,
+                value=finding.value,
+                threshold=finding.threshold,
+            )
+            for finding in summary.findings
+        ],
+    )
+
+
+def _misfire_summary_from_response(summary: MisfireSummaryResponse) -> MisfireSummary:
+    return MisfireSummary(
+        supported=summary.supported,
+        status=summary.status,
+        summary=summary.summary,
+        findings=[
+            MisfireFinding(
+                source=finding.source,
+                severity=finding.severity,
+                detail=finding.detail,
+                cylinder=finding.cylinder,
+                value=finding.value,
+                threshold=finding.threshold,
+            )
+            for finding in summary.findings
+        ],
+    )
 
 
 def _default_connection() -> OBDConnection:

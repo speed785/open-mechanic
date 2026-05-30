@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 # pyright: reportMissingTypeStubs=false
+import dataclasses
 import json
 import logging
 import os
@@ -14,6 +15,7 @@ from dotenv import load_dotenv
 from open_mechanic.ai.prompts import DIAGNOSTIC_SYSTEM_PROMPT, format_diagnostic_prompt
 from open_mechanic.db.models import VehicleProfile
 from open_mechanic.dtc import DTCCode
+from open_mechanic.mode6 import MisfireSummary, Mode6TestResult
 
 _ = load_dotenv()
 
@@ -109,9 +111,11 @@ class DiagnosticEngine:
         self,
         dtc_codes: list[str],
         vehicle_str: str,
-        snapshot: dict[str, Any],
+        diagnostic_context: dict[str, Any],
     ) -> str:
-        snapshot_json = json.dumps(_normalize_for_cache(snapshot), sort_keys=True, default=str)
+        snapshot_json = json.dumps(
+            _normalize_for_cache(diagnostic_context), sort_keys=True, default=str
+        )
         return f"{self._cache_key(dtc_codes, vehicle_str)}|{snapshot_json}"
 
     def _is_cache_valid(self, key: str) -> bool:
@@ -126,17 +130,30 @@ class DiagnosticEngine:
         dtcs: list[DTCCode],
         snapshot: dict[str, Any],
         *,
+        mode6_results: list[Mode6TestResult] | None = None,
+        misfire_summary: MisfireSummary | None = None,
         bypass_cache: bool = False,
     ) -> DiagnosisResult:
         vehicle_str = f"{vehicle.year} {vehicle.make} {vehicle.model} ({vehicle.mileage:,} miles)"
         dtc_codes = [dtc.code for dtc in dtcs]
+        diagnostic_context = {
+            "snapshot": snapshot,
+            "mode6_results": mode6_results or [],
+            "misfire_summary": misfire_summary,
+        }
 
-        key = self._diagnostic_cache_key(dtc_codes, vehicle_str, snapshot)
+        key = self._diagnostic_cache_key(dtc_codes, vehicle_str, diagnostic_context)
         if not bypass_cache and self._is_cache_valid(key):
             cached_result, _ = self._cache[key]
             return replace(cached_result, cached=True)
 
-        user_message = format_diagnostic_prompt(vehicle, dtcs, snapshot)
+        user_message = format_diagnostic_prompt(
+            vehicle,
+            dtcs,
+            snapshot,
+            mode6_results=mode6_results,
+            misfire_summary=misfire_summary,
+        )
 
         try:
             response = self._client.messages.create(
@@ -200,14 +217,16 @@ class DiagnosticEngine:
 
 
 def _normalize_for_cache(value: Any) -> Any:
-    if isinstance(value, dict):
-        return {str(key): _normalize_for_cache(item) for key, item in value.items()}
-    if isinstance(value, list | tuple):
-        return [_normalize_for_cache(item) for item in value]
     if hasattr(value, "supported") and hasattr(value, "value"):
         return {
             "supported": bool(value.supported),
             "value": str(value.value),
             "unit": getattr(value, "unit", None),
         }
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return _normalize_for_cache(dataclasses.asdict(value))
+    if isinstance(value, dict):
+        return {str(key): _normalize_for_cache(item) for key, item in value.items()}
+    if isinstance(value, list | tuple):
+        return [_normalize_for_cache(item) for item in value]
     return value

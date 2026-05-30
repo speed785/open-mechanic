@@ -12,6 +12,7 @@ from rich.console import Console
 from open_mechanic import tools
 from open_mechanic.dtc import DTCCode
 from open_mechanic.local_store import VehicleProfile
+from open_mechanic.mode6 import Mode6TestResult
 from open_mechanic.reader import SensorValue
 
 
@@ -131,7 +132,7 @@ def test_run_tools_menu_handles_quit_profile_and_tool(monkeypatch: pytest.Monkey
     console = Console(file=None)
     profile = VehicleProfile(2018, "Ford", "F-150")
     args = argparse.Namespace()
-    selections = iter([0, 1, 6])
+    selections = iter([0, 1, len(tools.MENU_ITEMS) - 1])
     called: list[str] = []
     monkeypatch.setattr(tools, "load_vehicle_profile", lambda: profile)
     monkeypatch.setattr(
@@ -361,6 +362,7 @@ class _FakeSessionLog:
         ("dtcs", "show_dtcs"),
         ("readiness", "show_readiness"),
         ("freeze-frame", "show_freeze_frame"),
+        ("mode6", "show_mode6"),
         ("snapshot", "show_health_snapshot"),
     ],
 )
@@ -556,6 +558,42 @@ def test_show_freeze_frame_renders_rows_and_empty(monkeypatch: pytest.MonkeyPatc
     assert "No supported freeze-frame PIDs reported" in console.export_text()
 
 
+def test_show_mode6_renders_monitor_results(monkeypatch: pytest.MonkeyPatch) -> None:
+    console = Console(record=True)
+    mode6_result = Mode6TestResult(
+        monitor="MONITOR_MISFIRE_CYLINDER_1",
+        monitor_description="Misfire Cylinder 1 Data",
+        category="misfire",
+        test_id=1,
+        test_name="Misfire counts",
+        description="Misfire counts",
+        value="12",
+        minimum="0",
+        maximum="5",
+        unit="count",
+        passed=False,
+        status="failed",
+    )
+    monkeypatch.setattr(
+        tools,
+        "Mode6Reader",
+        lambda connection: SimpleNamespace(get_results=lambda: [mode6_result]),
+    )
+    monkeypatch.setattr(tools, "DTCReader", lambda connection: SimpleNamespace(get_dtcs=lambda: []))
+
+    tools.show_mode6(console, object(), _FakeSessionLog("mode6", None))  # type: ignore[arg-type]
+
+    output = console.export_text()
+    assert "Mode 6 Monitor Tests" in output
+    assert "MONITOR_MISFIRE_CYLINDER_1" in output
+
+
+def test_mode6_and_misfire_tables_render_empty_states() -> None:
+    assert tools._mode6_table([]).row_count == 1
+    summary = tools.diagnose_misfires([], [], {})
+    assert tools._misfire_summary_table(summary).row_count == 1
+
+
 def test_show_health_snapshot_renders_summary(monkeypatch: pytest.MonkeyPatch) -> None:
     console = Console(record=True)
     status_command = object()
@@ -572,6 +610,11 @@ def test_show_health_snapshot_renders_summary(monkeypatch: pytest.MonkeyPatch) -
             get_dtcs=lambda: [DTCCode("P0420", "Catalyst", "confirmed", "warning", "emissions")]
         ),
     )
+    monkeypatch.setattr(
+        tools,
+        "Mode6Reader",
+        lambda connection: SimpleNamespace(get_results=lambda: []),
+    )
     monkeypatch.setattr(tools.obd, "commands", SimpleNamespace(STATUS=status_command))
     monkeypatch.setattr(
         tools,
@@ -583,7 +626,9 @@ def test_show_health_snapshot_renders_summary(monkeypatch: pytest.MonkeyPatch) -
 
     tools.show_health_snapshot(console, connection, _FakeSessionLog("snapshot", None))  # type: ignore[arg-type]
 
-    assert "Fault codes" in console.export_text()
+    output = console.export_text()
+    assert "Fault codes" in output
+    assert "Misfire status" in output
 
 
 def test_show_live_sensors_captures_one_sample(monkeypatch: pytest.MonkeyPatch) -> None:

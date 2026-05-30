@@ -30,6 +30,7 @@ from open_mechanic.ai.diagnose import DiagnosisResult, DiagnosticEngine, Diagnos
 from open_mechanic.connection import OBDConnection
 from open_mechanic.db.models import VehicleProfile
 from open_mechanic.dtc import DTCCode, DTCReader
+from open_mechanic.mode6 import Mode6Reader, Mode6TestResult, diagnose_misfires
 from open_mechanic.reader import SensorPoller, SensorValue
 
 
@@ -255,6 +256,38 @@ def _show_dtcs(console: Console, dtcs: list[DTCCode]) -> None:
     console.print(table)
 
 
+def _show_mode6(console: Console, mode6_results: list[Mode6TestResult]) -> None:
+    failed = [result for result in mode6_results if result.passed is False]
+    if not mode6_results:
+        console.print("[dim]No Mode 6 monitor tests reported[/dim]")
+        return
+    if not failed:
+        console.print(
+            f"[bold green]✓ Mode 6 monitor tests reported:[/bold green] {len(mode6_results)}"
+        )
+        return
+
+    table = Table(
+        title="Failed Mode 6 Monitor Tests",
+        show_header=True,
+        header_style="bold yellow",
+        border_style="dim",
+    )
+    table.add_column("Monitor", style="bold")
+    table.add_column("Test")
+    table.add_column("Value", justify="right")
+    table.add_column("Range")
+    for result in failed:
+        unit = f" {result.unit}" if result.unit else ""
+        table.add_row(
+            result.monitor,
+            result.test_name,
+            f"{result.value}{unit}",
+            f"{result.minimum}..{result.maximum}",
+        )
+    console.print(table)
+
+
 def _show_diagnosis(
     console: Console,
     result: DiagnosisResult,
@@ -370,6 +403,7 @@ def main() -> int:  # noqa: PLR0911
     # ── Sensors and DTCs ─────────────────────────────────────────────────────
     snapshot: dict[str, object] = {}
     dtcs: list[DTCCode] = []
+    mode6_results: list[Mode6TestResult] = []
 
     if connected:
         with Progress(
@@ -396,6 +430,18 @@ def main() -> int:  # noqa: PLR0911
 
         _show_dtcs(console, dtcs)
         console.print()
+
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+            transient=True,
+        ) as progress:
+            _ = progress.add_task("Reading Mode 6 monitor tests...", total=None)
+            mode6_results = Mode6Reader(obd_connection).get_results()
+
+        _show_mode6(console, mode6_results)
+        console.print()
     else:
         console.print("[dim]Skipping sensor reads and fault codes — no OBD connection[/dim]")
         console.print()
@@ -411,7 +457,14 @@ def main() -> int:  # noqa: PLR0911
             transient=True,
         ) as progress:
             _ = progress.add_task("Analyzing with AI...", total=None)
-            result = engine.diagnose(vehicle, dtcs, snapshot, bypass_cache=args.no_cache)
+            result = engine.diagnose(
+                vehicle,
+                dtcs,
+                snapshot,
+                mode6_results=mode6_results,
+                misfire_summary=diagnose_misfires(mode6_results, dtcs, snapshot),
+                bypass_cache=args.no_cache,
+            )
 
     except ValueError as exc:
         console.print(
