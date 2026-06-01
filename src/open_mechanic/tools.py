@@ -2,7 +2,9 @@ from __future__ import annotations
 
 # pyright: reportMissingTypeStubs=false, reportAttributeAccessIssue=false
 import argparse
+import ipaddress
 import sys
+import threading
 import time
 from dataclasses import asdict
 from datetime import datetime
@@ -17,6 +19,7 @@ from rich.table import Table
 from rich.text import Text
 
 from open_mechanic.connection import OBDConnection, scan_ports
+from open_mechanic.dashboard import run_dashboard
 from open_mechanic.diagnosis_cli import run_ai_diagnosis
 from open_mechanic.dtc import DTCReader
 from open_mechanic.local_store import (
@@ -176,6 +179,46 @@ def main(argv: list[str] | None = None) -> int:
             )
             cmd.add_argument("--no-graphs", action="store_true", help="Hide live sensor graphs")
 
+    dashboard_parser = subparsers.add_parser("dashboard", help="Open the terminal dashboard")
+    _add_connection_args(dashboard_parser)
+    dashboard_parser.add_argument(
+        "--interval", type=float, default=1.0, help="Refresh interval in seconds"
+    )
+    dashboard_parser.add_argument(
+        "--offline", action="store_true", help="Open without attempting an OBD adapter connection"
+    )
+    dashboard_parser.add_argument(
+        "--provider",
+        default=None,
+        help="AI provider: auto, openai, anthropic, ollama, openai_compatible",
+    )
+
+    web_parser = subparsers.add_parser("web", help="Open the browser dashboard")
+    web_parser.add_argument("--host", default="127.0.0.1", help="Web server host")
+    web_parser.add_argument("--port", type=int, default=8000, help="Web server port")
+    web_parser.add_argument(
+        "--obd-port", default=None, help="Serial port override, for example /dev/ttyUSB0"
+    )
+    web_parser.add_argument(
+        "--protocol", default=None, help="OBD protocol override, for example 6 for CAN 11/500"
+    )
+    web_parser.add_argument("--timeout", type=float, default=10.0, help="Connection timeout in seconds")
+    web_parser.add_argument("--baudrate", type=int, default=115200, help="Serial baudrate")
+    web_parser.add_argument("--reload", action="store_true", help="Reload server on code changes")
+    web_parser.add_argument(
+        "--no-gui",
+        action="store_true",
+        help="Start the local web runtime without opening a browser",
+    )
+    web_parser.add_argument(
+        "--offline", action="store_true", help="Start without attempting an OBD adapter connection"
+    )
+    web_parser.add_argument(
+        "--provider",
+        default=None,
+        help="AI provider: auto, openai, anthropic, ollama, openai_compatible",
+    )
+
     diagnose_parser = subparsers.add_parser("diagnose", help="Run AI diagnosis")
     _add_connection_args(diagnose_parser)
     diagnose_parser.add_argument(
@@ -223,6 +266,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "diagnose":
         return run_ai_diagnosis(args, console)
+    if args.command == "dashboard":
+        return run_dashboard(args)
+    if args.command == "web":
+        return run_web_server(args, console)
 
     return run_direct_tool(args.command, args, console)
 
@@ -236,6 +283,85 @@ def _add_connection_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--timeout", type=float, default=10.0, help="Connection timeout in seconds")
     parser.add_argument("--baudrate", type=int, default=115200, help="Serial baudrate")
+
+
+def run_web_server(args: argparse.Namespace, console: Console) -> int:
+    try:
+        import uvicorn
+    except ImportError:
+        console.print("[bold red]FastAPI server dependencies are not installed.[/bold red]")
+        console.print('Install them with: [bold]pip install -e ".[api]"[/bold]')
+        return 1
+
+    from open_mechanic.web.app import create_app
+    from open_mechanic.web.schemas import ConnectRequest
+    from open_mechanic.web.service import DashboardService
+
+    service = DashboardService(
+        offline=bool(getattr(args, "offline", False)),
+        provider_name=getattr(args, "provider", None),
+    )
+    if not bool(getattr(args, "offline", False)):
+        _ = service.connect(
+            ConnectRequest(
+                port=getattr(args, "obd_port", None),
+                protocol=getattr(args, "protocol", None),
+                baudrate=getattr(args, "baudrate", 115200),
+                timeout=getattr(args, "timeout", 10.0),
+                offline=False,
+            )
+        )
+
+    host = str(getattr(args, "host", "127.0.0.1"))
+    port = int(getattr(args, "port", 8000))
+    url = f"http://{host}:{port}"
+    console.print(f"[green]open-mechanic web dashboard[/green] {url}")
+    if not _is_loopback_host(host):
+        console.print(
+            "[bold yellow]Warning:[/bold yellow] the web API has no authentication; "
+            "only bind to trusted networks."
+        )
+    if _should_open_web_gui(args):
+        _schedule_web_gui_open(url, console)
+    uvicorn.run(create_app(service=service), host=host, port=port, reload=bool(args.reload))
+    return 0
+
+
+def _should_open_web_gui(args: argparse.Namespace) -> bool:
+    return not bool(getattr(args, "no_gui", False)) and not bool(getattr(args, "reload", False))
+
+
+def _is_loopback_host(host: str) -> bool:
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+def _schedule_web_gui_open(
+    url: str,
+    console: Console,
+    *,
+    delay: float = 0.75,
+    timer_factory: type[threading.Timer] = threading.Timer,
+) -> None:
+    timer = timer_factory(delay, _open_web_gui, args=(url, console))
+    timer.daemon = True
+    timer.start()
+
+
+def _open_web_gui(url: str, console: Console) -> None:
+    import webbrowser
+
+    try:
+        opened = webbrowser.open(url, new=2)
+    except Exception as exc:  # pragma: no cover - depends on local desktop
+        console.print(f"[yellow]Could not open browser:[/yellow] {exc}")
+        return
+    if not opened:
+        console.print("[yellow]Could not open browser automatically.[/yellow]")
 
 
 def run_tools_menu(args: argparse.Namespace, console: Console) -> int:

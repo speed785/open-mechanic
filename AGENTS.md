@@ -114,6 +114,7 @@ Output: DiagnosisResult dataclass
 | `src/open_mechanic/ai/diagnose.py` | Provider-agnostic diagnosis engine, JSON parsing, 24h cache, disclaimer injection |
 | `src/open_mechanic/ai/providers.py` | OpenAI, Anthropic, Ollama, and OpenAI-compatible local provider adapters |
 | `src/open_mechanic/diagnosis_cli.py` | Guided Rich CLI diagnosis flow and JSON report writing |
+| `src/open_mechanic/dashboard.py` | Persistent Textual terminal dashboard with arrow-key navigation |
 | `src/open_mechanic/enrichment.py` | Optional NHTSA vPIC VIN decode enrichment |
 | `data/dtc_codes.json` | Offline DTC reference: `{code, description, severity, category}` |
 | `scripts/test_connection.py` | Standalone adapter test, uses `python-obd` directly (no package import) |
@@ -127,6 +128,7 @@ Output: DiagnosisResult dataclass
 - **Python**: 3.11+ minimum
 - **Type hints**: everywhere, mypy strict (`--ignore-missing-imports` for now)
 - **Data structures**: dataclasses (not dicts, not Pydantic models in core layer)
+- **Terminal UI**: Rich for command output, Textual for persistent dashboard
 - **Linting**: ruff (`ruff check` + `ruff format`)
 - **Tests**: pytest
 - **AI providers**: provider-agnostic via `AI_PROVIDER`; `auto` prefers OpenAI, then Anthropic, then Ollama, then OpenAI-compatible local
@@ -225,4 +227,4 @@ All configured in `.env` (copy from `.env.example`):
 - Do not add EV/Hybrid-specific logic in Phase 1-2
 - Do not use merge commits or rebase merges (squash-merge only repo)
 - Do not rely on OBD protocol auto-detection in production — always set OBD_PROTOCOL in .env
-- See `docs/AGENT_WORKFLOWS.md` before changing provider selection, VIN enrichment, or agent-facing workflows
+- See `docs/AGENT_WORKFLOWS.md` before changing provider selection, VIN enrichment, dashboard behavior, or agent-facing workflows

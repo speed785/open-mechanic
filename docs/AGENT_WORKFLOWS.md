@@ -2,6 +2,17 @@
 
 This repository is safe for coding agents to work in when they preserve the diagnostic safety gates.
 
+## Terminal Dashboard
+
+Use the persistent shell UI when a human wants an app-like terminal experience:
+
+```bash
+open-mechanic dashboard --offline
+open-mechanic dashboard --protocol 6
+```
+
+Navigation is keyboard-first: Up/Down changes views, Enter selects, `r` reconnects, `d` focuses AI diagnosis, and `q` exits. The dashboard must remain useful while disconnected. Enhanced non-engine modules are future work and should not be faked.
+
 ## AI Diagnosis CLI
 
 Use the installed CLI entrypoint for the primary workflow:

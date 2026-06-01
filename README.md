@@ -71,6 +71,14 @@ cp .env.example .env
 python scripts/test_connection.py
 # Tip: if connection hangs, your car likely uses CAN — add OBD_PROTOCOL=6 to .env
 
+# Persistent terminal dashboard
+open-mechanic dashboard --offline
+# With the OBD adapter connected, remove --offline; add --protocol 6 if auto-detect is slow
+
+# Browser dashboard with gauges, status bars, graphs, DTCs, and AI diagnosis panel
+open-mechanic web --offline
+open-mechanic web --protocol 6
+
 # AI diagnosis with the guided Rich CLI
 open-mechanic diagnose --vehicle "2018 Ford F-150" --mileage 85000 --offline
 # With a VIN, open-mechanic automatically enriches context via NHTSA vPIC
@@ -115,7 +123,7 @@ open-mechanic diagnose --vehicle "2018 Ford F-150" --mileage 85000 --vin 1FTFW1E
 | Backend | Python + FastAPI |
 | Frontend | React + TailwindCSS *(Phase 3)* |
 | Database | SQLite → PostgreSQL |
-| CLI | Python + `rich` Guided CLI |
+| CLI | Python + `rich` + `textual` dashboard |
 | Hosting | Self-hostable Docker |
 | CI/CD | GitHub Actions |
 
@@ -130,7 +138,7 @@ OBD-II connection management · Live sensor polling · DTC fault code reading + 
 AI API integration · Structured JSON diagnostic output · Local DTC code cache
 
 ### 📋 Phase 3 — Interface *(Month 2)*
-Rich CLI with color-coded severity · FastAPI REST backend · React dashboard + repair guide viewer · Maintenance timeline tracker
+Textual terminal dashboard · Rich CLI with color-coded severity · FastAPI REST backend · React dashboard + repair guide viewer · Maintenance timeline tracker
 
 ### 🌐 Phase 4 — Community *(Month 3–6)*
 Public open-source release · Community DTC database · Manufacturer-specific modules (Ford, VW, BMW) · Optional SaaS hosted tier
