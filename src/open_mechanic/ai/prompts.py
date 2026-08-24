@@ -1,6 +1,7 @@
 """Prompt templates for the Claude AI diagnostic engine.
 
 This module is pure string formatting — no API calls, no imports of anthropic.
+Structured JSON shape is enforced by ``DiagnosisAIOutput`` via ``messages.parse``.
 """
 
 from __future__ import annotations
@@ -17,23 +18,18 @@ vehicle fault codes, and mechanical repair across all major makes and models.
 You will be given vehicle information, active fault codes (DTCs), and live sensor data \
 from an OBD-II scan. Your task is to analyze this data and return a diagnosis.
 
-RESPONSE FORMAT:
-You MUST respond with ONLY valid JSON — no markdown, no prose, no code fences. \
-The JSON must conform exactly to this schema:
+OUTPUT:
+Your response is constrained to a structured JSON schema with these fields:
+- severity: info | warning | critical | do_not_drive
+- summary: one sentence plain-English summary of the diagnosis
+- likely_causes: list of likely causes (at least two)
+- repair_steps: list of repair steps (at least two)
+- estimated_cost_usd: object with integer low and high US-dollar estimates
+- diy_feasible: boolean
+- diy_difficulty: easy | moderate | hard | professional_only
+- urgency: immediate | soon | next_service | monitor
 
-{
-  "severity": "<info|warning|critical|do_not_drive>",
-  "summary": "<one sentence plain-English summary of the diagnosis>",
-  "likely_causes": ["<cause 1>", "<cause 2>"],
-  "repair_steps": ["<step 1>", "<step 2>"],
-  "estimated_cost_usd": {"low": <integer>, "high": <integer>},
-  "diy_feasible": <true|false>,
-  "diy_difficulty": "<easy|moderate|hard|professional_only>",
-  "urgency": "<immediate|soon|next_service|monitor>",
-  "disclaimer": "This diagnosis is informational only and does not constitute \
-professional mechanical advice. Consult a qualified mechanic before making \
-safety-critical repairs."
-}
+Do not include a disclaimer field; the application injects the safety disclaimer.
 
 SEVERITY DEFINITIONS:
 - info: No fault codes, all sensors nominal — routine check.
@@ -48,16 +44,13 @@ URGENCY DEFINITIONS:
 - monitor: Keep an eye on it; no immediate action required.
 
 RULES:
-1. Always populate "disclaimer" with exactly: \
-"This diagnosis is informational only and does not constitute professional mechanical \
-advice. Consult a qualified mechanic before making safety-critical repairs."
-2. Be conservative: when in doubt, escalate severity rather than downplay it.
-3. Some sensors may show "N/A (unsupported)" — this means the vehicle does not \
+1. Be conservative: when in doubt, escalate severity rather than downplay it.
+2. Some sensors may show "N/A (unsupported)" — this means the vehicle does not \
 expose that PID. Do not treat missing sensor data as a fault; simply work with \
 what is available.
-4. If multiple DTCs are present, consider their combined effect on severity.
-5. Provide at least two likely causes and at least two repair steps.
-6. Cost estimates should reflect realistic US market labour + parts ranges.
+3. If multiple DTCs are present, consider their combined effect on severity.
+4. Provide at least two likely causes and at least two repair steps.
+5. Cost estimates should reflect realistic US market labour + parts ranges.
 """
 
 
@@ -145,5 +138,5 @@ def format_diagnostic_prompt(
         f"{vehicle_line}\n\n"
         f"{fault_section}\n\n"
         f"{sensor_section}\n\n"
-        "Please analyze this data and provide your diagnosis as JSON."
+        "Please analyze this data and provide your structured diagnosis."
     )
