@@ -74,7 +74,7 @@ def test_format_diagnostic_prompt_includes_vehicle_dtcs_and_sensors() -> None:
     assert "Fault Codes (1):" in prompt
     assert "  - P0420: Catalyst system efficiency below threshold [warning, emissions]" in prompt
     assert "Live Sensor Data:\n  RPM: 750 rpm" in prompt
-    assert prompt.endswith("Please analyze this data and provide your diagnosis as JSON.")
+    assert prompt.endswith("Please analyze this data and provide your structured diagnosis.")
 
 
 def test_format_diagnostic_prompt_handles_no_dtcs_and_no_vin() -> None:
