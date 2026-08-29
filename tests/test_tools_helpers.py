@@ -178,6 +178,49 @@ def test_stellantis_live_cli_requires_explicit_finite_samples() -> None:
     assert error.value.code == 2
 
 
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ["stellantis-live", "--vehicle", "wrangler_jl_4xe_2024", "--group", "cruise", "--samples", "0"],
+        ["stellantis-live", "--vehicle", "wrangler_jl_4xe_2024", "--group", "cruise", "--samples", "61"],
+        ["stellantis-live", "--vehicle", "wrangler_jl_4xe_2024", "--group", "cruise", "--samples", "many"],
+        ["stellantis-live", "--vehicle", "wrangler_jl_4xe_2024", "--group", "cruise", "--samples", "1", "--interval", "0"],
+        ["stellantis-scan", "--vehicle", "wrangler_jl_4xe_2024", "--timeout", "0"],
+        ["stellantis-scan", "--vehicle", "wrangler_jl_4xe_2024", "--timeout", "later"],
+        ["stellantis-scan", "--vehicle", "wrangler_jl_4xe_2024", "--protocol", "7"],
+        ["stellantis-scan", "--vehicle", "wrangler_jl_4xe_2024", "--baudrate", "9600"],
+    ],
+)
+def test_invalid_stellantis_cli_values_exit_concisely_before_hardware(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    arguments: list[str],
+) -> None:
+    monkeypatch.setattr(
+        tools,
+        "ELM327Transport",
+        lambda *args, **kwargs: pytest.fail("transport must not be constructed"),
+    )
+
+    with pytest.raises(SystemExit) as error:
+        tools.main(arguments)
+
+    assert error.value.code == 2
+    captured = capsys.readouterr()
+    assert "error:" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_stellantis_help_documents_fixed_protocol_and_baudrate(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as error:
+        tools.main(["stellantis-scan", "--help"])
+
+    assert error.value.code == 0
+    output = capsys.readouterr().out
+    assert "ISO 15765-4 CAN 11/500; only 6 is accepted" in output
+    assert "OBDLink EX fixed rate; only 115200 is accepted" in output
+
+
 def test_stellantis_command_builds_catalog_scanner_and_dispatches(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -206,6 +249,60 @@ def test_stellantis_command_builds_catalog_scanner_and_dispatches(
     )
 
     assert result == 4
+
+
+def test_direct_stellantis_dispatch_rejects_nonfixed_settings_before_construction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        tools, "load_catalog", lambda name: pytest.fail("catalog must not be loaded")
+    )
+
+    with pytest.raises(ValueError, match="protocol"):
+        tools.run_stellantis_command(
+            argparse.Namespace(
+                command="stellantis-scan",
+                vehicle="wrangler_jl_4xe_2024",
+                port="/dev/test",
+                timeout=1.0,
+                protocol="7",
+                baudrate=115200,
+            ),
+            Console(file=None),
+        )
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"baudrate": 9600}, "baudrate"),
+        ({"timeout": 0.0}, "timeout"),
+        ({"samples": 0}, "samples"),
+        ({"interval": 0.0}, "interval"),
+    ],
+)
+def test_direct_stellantis_dispatch_validates_all_bounds_before_catalog(
+    monkeypatch: pytest.MonkeyPatch,
+    changes: dict[str, object],
+    message: str,
+) -> None:
+    monkeypatch.setattr(
+        tools, "load_catalog", lambda name: pytest.fail("catalog must not be loaded")
+    )
+    values: dict[str, object] = {
+        "command": "stellantis-live",
+        "vehicle": "wrangler_jl_4xe_2024",
+        "port": "/dev/test",
+        "timeout": 1.0,
+        "protocol": "6",
+        "baudrate": 115200,
+        "samples": 1,
+        "interval": 0.1,
+    }
+    values.update(changes)
+
+    with pytest.raises(ValueError, match=message):
+        tools.run_stellantis_command(argparse.Namespace(**values), Console(file=None))
 
 
 def test_stellantis_live_command_passes_finite_bounds_and_reports_permission_error(

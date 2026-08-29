@@ -12,6 +12,7 @@ from typing import ParamSpec, TypeVar, cast
 from fastapi import FastAPI, HTTPException, Query
 
 from open_mechanic.ai.diagnose import ExternalSharingNotAuthorized
+from open_mechanic.protocols.elm327 import ELM327ConnectionError
 
 from .schemas import (
     DiagnoseRequest,
@@ -195,7 +196,7 @@ def create_app(
     ) -> StellantisScanResponse:
         if vehicle != "wrangler_jl_4xe_2024":
             raise HTTPException(status_code=404, detail="unsupported vehicle catalog")
-        return await _run_service(
+        return await _run_stellantis_service(
             diagnostic_workers, api_service.get_stellantis_dtcs, vehicle, port, timeout
         )
 
@@ -210,7 +211,7 @@ def create_app(
     ) -> StellantisLiveResponse:
         if vehicle != "wrangler_jl_4xe_2024" or group != "cruise":
             raise HTTPException(status_code=404, detail="unsupported vehicle or live group")
-        return await _run_service(
+        return await _run_stellantis_service(
             diagnostic_workers,
             api_service.get_stellantis_live,
             vehicle,
@@ -234,3 +235,20 @@ async def _run_service(
         return await worker_pool.run(call, *args, **kwargs)
     except WorkerPoolUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+async def _run_stellantis_service(
+    worker_pool: DiagnosticWorkerPool,
+    call: Callable[P, T],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> T:
+    try:
+        return await _run_service(worker_pool, call, *args, **kwargs)
+    except ELM327ConnectionError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "OBDLink EX unavailable; check the configured port and dialout group or udev ACL"
+            ),
+        ) from exc

@@ -172,19 +172,19 @@ def main(argv: list[str] | None = None) -> int:
     stellantis_scan = subparsers.add_parser(
         "stellantis-scan", help="Read cataloged Stellantis module DTCs (ephemeral)"
     )
-    _add_connection_args(stellantis_scan)
+    _add_stellantis_connection_args(stellantis_scan)
     stellantis_scan.set_defaults(port="/dev/ttyUSB0")
     stellantis_scan.add_argument("--vehicle", required=True, choices=("wrangler_jl_4xe_2024",))
 
     stellantis_live = subparsers.add_parser(
         "stellantis-live", help="Read a finite cataloged Stellantis live-data view"
     )
-    _add_connection_args(stellantis_live)
+    _add_stellantis_connection_args(stellantis_live)
     stellantis_live.set_defaults(port="/dev/ttyUSB0")
     stellantis_live.add_argument("--vehicle", required=True, choices=("wrangler_jl_4xe_2024",))
     stellantis_live.add_argument("--group", required=True, choices=("cruise",))
-    stellantis_live.add_argument("--samples", type=int, required=True)
-    stellantis_live.add_argument("--interval", type=float, default=1.0)
+    stellantis_live.add_argument("--samples", type=_live_samples, required=True)
+    stellantis_live.add_argument("--interval", type=_live_interval, default=1.0)
 
     args = parser.parse_args(argv)
     console = Console()
@@ -204,6 +204,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def run_stellantis_command(args: argparse.Namespace, console: Console) -> int:
     """Build the single supported read-only hardware path and dispatch it."""
+    _validate_stellantis_connection_args(args)
     catalog = load_catalog(str(args.vehicle))
     scanner = StellantisScanner(
         ELM327Transport(str(args.port), timeout=float(args.timeout)),
@@ -227,6 +228,78 @@ def run_stellantis_command(args: argparse.Namespace, console: Console) -> int:
         )
         console.print("[dim]No diagnostic data was saved, cached, or sent anywhere.[/dim]")
         return 1
+
+
+def _add_stellantis_connection_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--port", default="/dev/ttyUSB0", help="OBDLink EX serial port (default: /dev/ttyUSB0)"
+    )
+    parser.add_argument(
+        "--protocol",
+        choices=("6",),
+        default="6",
+        help="ISO 15765-4 CAN 11/500; only 6 is accepted",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=_stellantis_timeout,
+        default=1.0,
+        help="Bounded adapter timeout in seconds (greater than 0, at most 10)",
+    )
+    parser.add_argument(
+        "--baudrate",
+        type=int,
+        choices=(115200,),
+        default=115200,
+        help="OBDLink EX fixed rate; only 115200 is accepted",
+    )
+
+
+def _bounded_number(value: str, *, name: str, minimum: float, maximum: float) -> float:
+    try:
+        parsed = float(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(f"{name} must be a number") from error
+    if not minimum < parsed <= maximum:
+        raise argparse.ArgumentTypeError(
+            f"{name} must be greater than {minimum:g} and at most {maximum:g}"
+        )
+    return parsed
+
+
+def _stellantis_timeout(value: str) -> float:
+    return _bounded_number(value, name="timeout", minimum=0, maximum=10)
+
+
+def _live_interval(value: str) -> float:
+    return _bounded_number(value, name="interval", minimum=0, maximum=10)
+
+
+def _live_samples(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("samples must be an integer") from error
+    if not 1 <= parsed <= 60:
+        raise argparse.ArgumentTypeError("samples must be from 1 to 60")
+    return parsed
+
+
+def _validate_stellantis_connection_args(args: argparse.Namespace) -> None:
+    if getattr(args, "protocol", "6") != "6":
+        raise ValueError("protocol must be 6 (ISO 15765-4 CAN 11/500)")
+    if getattr(args, "baudrate", 115200) != 115200:
+        raise ValueError("baudrate must be 115200 for OBDLink EX")
+    timeout = float(args.timeout)
+    if not 0 < timeout <= 10:
+        raise ValueError("timeout must be greater than 0 and at most 10")
+    if args.command == "stellantis-live":
+        samples = int(args.samples)
+        interval = float(args.interval)
+        if not 1 <= samples <= 60:
+            raise ValueError("samples must be from 1 to 60")
+        if not 0 < interval <= 10:
+            raise ValueError("interval must be greater than 0 and at most 10")
 
 
 def _add_connection_args(parser: argparse.ArgumentParser) -> None:

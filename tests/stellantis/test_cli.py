@@ -83,7 +83,6 @@ def test_live_render_includes_source_units_freshness_event_and_safety_warning() 
     assert "km/h" in output
     assert "fresh" in output
     assert "engaged_to_cancelled" in output
-    assert "passenger or qualified technician" in output
     assert "No diagnostic data was saved" in output
 
 
@@ -176,3 +175,23 @@ def test_live_collects_exact_finite_samples_and_waits_only_between_them() -> Non
     assert calls == ["cruise", "cruise"]
     assert sleeps == [0.2]
     assert "securityAccessDenied" in console.export_text()
+
+
+def test_driver_warning_is_printed_before_first_live_acquisition() -> None:
+    events: list[str] = []
+
+    class RecordingConsole(Console):
+        def print(self, *objects: object, **kwargs: object) -> None:
+            events.append(str(objects[0]))
+            super().print(*objects, **kwargs)
+
+    class Scanner:
+        def read_group(self, group: str) -> tuple[LiveValue, ...]:
+            events.append("read_group")
+            return ()
+
+    assert run_live(
+        RecordingConsole(file=None), Scanner(), samples=1, interval=0.1  # type: ignore[arg-type]
+    ) == 0
+    assert "passenger or qualified technician" in events[0]
+    assert events.index("read_group") > 0

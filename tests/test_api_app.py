@@ -234,6 +234,36 @@ async def test_stellantis_routes_reject_unknown_or_unbounded_requests(
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/stellantis/wrangler_jl_4xe_2024/dtc",
+        "/api/stellantis/wrangler_jl_4xe_2024/live/cruise",
+    ],
+)
+async def test_stellantis_adapter_failures_are_actionable_503_without_private_details(
+    path: str,
+) -> None:
+    from open_mechanic.protocols.elm327 import ELM327ConnectionError
+
+    class FailedService(FakeService):
+        def get_stellantis_dtcs(self, vehicle: str, port: str, timeout: float) -> Any:
+            raise ELM327ConnectionError("could not open /dev/private-car-adapter")
+
+        def get_stellantis_live(self, *args: Any, **kwargs: Any) -> Any:
+            raise ELM327ConnectionError("could not open /dev/private-car-adapter")
+
+    async with _client(FailedService()) as client:
+        response = await client.get(path)
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "OBDLink EX unavailable; check the configured port and dialout group or udev ACL"
+    }
+    assert "private-car-adapter" not in response.text
+
+
+@pytest.mark.anyio
 async def test_diagnose_endpoint_passes_request_to_service() -> None:
     service = FakeService()
     async with _client(service) as client:

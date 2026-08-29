@@ -94,10 +94,6 @@ def run_scan(console: Console, scanner: StellantisScanner) -> int:
 
 def render_live(console: Console, values: tuple[LiveValue, ...], *, sample: int) -> None:
     """Render one finite live-data sample."""
-    console.print(
-        "[bold yellow]Driver-distraction warning:[/bold yellow] moving tests must be operated "
-        "by a passenger or qualified technician; the driver must not operate this computer."
-    )
     table = Table(title=f"Cruise live data — sample {sample}")
     table.add_column("Source")
     table.add_column("Value")
@@ -148,6 +144,10 @@ def run_live(
 ) -> int:
     """Collect a finite number of ephemeral cruise samples."""
     validate_live_bounds(samples, interval)
+    console.print(
+        "[bold yellow]Driver-distraction warning:[/bold yellow] moving tests must be operated "
+        "by a passenger or qualified technician; the driver must not operate this computer."
+    )
     try:
         for sample in range(1, samples + 1):
             render_live(console, scanner.read_group("cruise"), sample=sample)
