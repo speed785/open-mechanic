@@ -169,7 +169,23 @@ class StellantisScanner:
             for payload in self._payloads(replies)
             if payload[0] is None or payload[0] == request.rx_id
         )
-        return expected[0][1] if expected else None
+        if not expected:
+            return None
+        payloads = tuple(payload for _, payload in expected)
+        pending_count = 0
+        while pending_count < len(payloads) and payloads[pending_count] == bytes(
+            (0x7F, request.service, 0x78)
+        ):
+            pending_count += 1
+        if pending_count and pending_count < len(payloads):
+            final = payloads[pending_count]
+            if final[:1] == bytes((request.service + 0x40,)) or (
+                len(final) == 3
+                and final[:2] == bytes((0x7F, request.service))
+                and final[2] != 0x78
+            ):
+                return final
+        return payloads[0]
 
     @staticmethod
     def _payloads(

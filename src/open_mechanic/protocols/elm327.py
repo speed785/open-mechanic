@@ -131,8 +131,9 @@ class ELM327Transport:
             frame = self._parse_can_frame(line)
             frames_by_responder[frame.responder_id].append(frame)
         return [
-            RawDiagnosticResponse(responder_id, reassemble_isotp(frames))
+            RawDiagnosticResponse(responder_id, payload)
             for responder_id, frames in frames_by_responder.items()
+            for payload in self._reassemble_messages(frames)
         ]
 
     def close(self) -> None:
@@ -206,6 +207,27 @@ class ELM327Transport:
             raise ELM327ProtocolError("adapter response used a non-11-bit CAN header")
         data = bytes.fromhex(match.group(2))
         return CANFrame(responder_id, data)
+
+    @staticmethod
+    def _reassemble_messages(frames: list[CANFrame]) -> list[bytes]:
+        messages: list[bytes] = []
+        start = 0
+        while start < len(frames):
+            first = frames[start].data
+            frame_type = first[0] >> 4
+            end = start + 1
+            if frame_type == 1 and len(first) >= 2:
+                declared_length = ((first[0] & 0x0F) << 8) | first[1]
+                available = len(first) - 2
+                while available < declared_length and end < len(frames):
+                    next_frame = frames[end]
+                    if next_frame.data[0] >> 4 != 2:
+                        break
+                    available += len(next_frame.data) - 1
+                    end += 1
+            messages.append(reassemble_isotp(frames[start:end]))
+            start = end
+        return messages
 
     @staticmethod
     def _validate_can_id(can_id: int, direction: str) -> None:

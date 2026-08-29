@@ -13,6 +13,7 @@ from open_mechanic.protocols.elm327 import (
     ELM327Transport,
     RawDiagnosticResponse,
 )
+from open_mechanic.protocols.isotp import ISOTPError
 from open_mechanic.protocols.requests import DiagnosticRequest, build_uds_request
 
 
@@ -194,6 +195,41 @@ def test_exchange_keeps_mixed_responders_separate() -> None:
         RawDiagnosticResponse(0x7E8, bytes.fromhex("62F190")),
         RawDiagnosticResponse(0x7E9, bytes.fromhex("62F191")),
     ]
+
+
+def test_exchange_partitions_multiple_complete_messages_from_one_responder() -> None:
+    serial = FakeSerial(
+        _responses(
+            exchange=(
+                "7E8 03 7F 22 78\r"
+                "7E8 10 0B 62 F1 90 31 4A\r"
+                "7E8 21 34 46 59 35 39 30\r>"
+            )
+        )
+    )
+    transport = ELM327Transport("/dev/test", serial_factory=_factory(serial))
+    transport.open()
+
+    assert transport.exchange(_request()) == [
+        RawDiagnosticResponse(0x7E8, bytes.fromhex("7F2278")),
+        RawDiagnosticResponse(0x7E8, bytes.fromhex("62F190314A344659353930")),
+    ]
+
+
+@pytest.mark.parametrize(
+    "exchange",
+    [
+        "7E8 03 62 F1 90\r7E8 21 AA BB CC DD EE FF 00\r>",
+        "7E8 10 0B 62 F1 90 31 4A\r7E8 03 7F 22 78\r>",
+    ],
+)
+def test_exchange_rejects_trailing_or_interleaved_message_sequences(exchange: str) -> None:
+    serial = FakeSerial(_responses(exchange=exchange))
+    transport = ELM327Transport("/dev/test", serial_factory=_factory(serial))
+    transport.open()
+
+    with pytest.raises(ISOTPError):
+        transport.exchange(_request())
 
 
 def test_open_wraps_permission_errors() -> None:

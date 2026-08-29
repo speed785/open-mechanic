@@ -176,6 +176,52 @@ def test_mismatched_negative_response_service_is_malformed_not_gateway_blocked()
     assert "got 0x27" in (value.error or "")
 
 
+def test_scanner_skips_matching_response_pending_before_final_response() -> None:
+    transport = FakeTransport(
+        {
+            0x600: [
+                _Response(bytes.fromhex("7F2278"), 0x608),
+                _Response(bytes.fromhex("7F2278"), 0x608),
+                _Response(bytes.fromhex("62123450"), 0x608),
+            ]
+        }
+    )
+    catalog = _catalog(dids=(_did(0x1234, "wheel speed"),))
+
+    value = StellantisScanner(transport, catalog).read_group("cruise")[0]
+
+    assert value.state is ModuleState.RESPONDED
+    assert value.value == 80.0
+
+
+def test_scanner_preserves_lone_response_pending_without_retrying() -> None:
+    transport = FakeTransport({0x600: [_Response(bytes.fromhex("7F2278"), 0x608)]})
+    catalog = _catalog(dids=(_did(0x1234, "wheel speed"),))
+
+    value = StellantisScanner(transport, catalog).read_group("cruise")[0]
+
+    assert value.state is ModuleState.NEGATIVE_RESPONSE
+    assert "requestCorrectlyReceivedResponsePending" in (value.error or "")
+    assert len(transport.requests) == 1
+
+
+def test_scanner_does_not_skip_pending_for_a_mismatched_service() -> None:
+    transport = FakeTransport(
+        {
+            0x600: [
+                _Response(bytes.fromhex("7F1978"), 0x608),
+                _Response(bytes.fromhex("62123450"), 0x608),
+            ]
+        }
+    )
+    catalog = _catalog(dids=(_did(0x1234, "wheel speed"),))
+
+    value = StellantisScanner(transport, catalog).read_group("cruise")[0]
+
+    assert value.state is ModuleState.NEGATIVE_RESPONSE
+    assert "expected 0x22" in (value.error or "")
+
+
 def test_read_group_decodes_known_enum_and_retains_unknown_raw_value() -> None:
     transport = FakeTransport({0x600: bytes.fromhex("62123402")})
     catalog = _catalog(
