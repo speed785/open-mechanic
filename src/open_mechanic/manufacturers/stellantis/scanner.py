@@ -19,7 +19,12 @@ from open_mechanic.manufacturers.stellantis.models import (
     ModuleState,
     StellantisScanResult,
 )
-from open_mechanic.protocols.elm327 import ELM327Error, ELM327TimeoutError, RawDiagnosticResponse
+from open_mechanic.protocols.elm327 import (
+    ELM327Error,
+    ELM327ProtocolError,
+    ELM327TimeoutError,
+    RawDiagnosticResponse,
+)
 from open_mechanic.protocols.requests import DiagnosticRequest
 from open_mechanic.protocols.uds import (
     UDSProtocolError,
@@ -177,7 +182,9 @@ class StellantisScanner:
             (0x7F, request.service, 0x78)
         ):
             pending_count += 1
-        if pending_count and pending_count < len(payloads):
+        if pending_count and len(payloads) - pending_count > 1:
+            raise ELM327ProtocolError("multiple final diagnostic responses")
+        if pending_count and len(payloads) - pending_count == 1:
             final = payloads[pending_count]
             if final[:1] == bytes((request.service + 0x40,)) or (
                 len(final) == 3

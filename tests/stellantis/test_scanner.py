@@ -222,6 +222,35 @@ def test_scanner_does_not_skip_pending_for_a_mismatched_service() -> None:
     assert "expected 0x22" in (value.error or "")
 
 
+@pytest.mark.parametrize(
+    "trailing_payload",
+    [
+        bytes.fromhex("7F2222"),
+        bytes.fromhex("62123451"),
+        bytes.fromhex("00"),
+    ],
+)
+def test_scanner_rejects_payload_after_pending_and_final_response(
+    trailing_payload: bytes,
+) -> None:
+    transport = FakeTransport(
+        {
+            0x600: [
+                _Response(bytes.fromhex("7F2278"), 0x608),
+                _Response(bytes.fromhex("62123450"), 0x608),
+                _Response(trailing_payload, 0x608),
+            ]
+        }
+    )
+    catalog = _catalog(dids=(_did(0x1234, "wheel speed"),))
+
+    value = StellantisScanner(transport, catalog).read_group("cruise")[0]
+
+    assert value.state is ModuleState.NEGATIVE_RESPONSE
+    assert value.error == "multiple final diagnostic responses"
+    assert len(transport.requests) == 1
+
+
 def test_read_group_decodes_known_enum_and_retains_unknown_raw_value() -> None:
     transport = FakeTransport({0x600: bytes.fromhex("62123402")})
     catalog = _catalog(

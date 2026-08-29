@@ -45,3 +45,11 @@ Command:
 - Mypy strict mode: clean across 28 source files.
 - `git diff --check`: clean.
 
+## Review hardening
+
+Review identified that an additional complete payload after pending plus final could be
+silently discarded. Three synthetic RED cases covered trailing negative, positive, and
+malformed payloads; all initially returned the first positive final value. The scanner now
+requires exactly one payload after the leading matching pending sequence. More than one is
+classified as a protocol error without retry or extra I/O. The focused review gate passed
+all six pending-response cases.
