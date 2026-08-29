@@ -18,6 +18,10 @@ from rich.text import Text
 from open_mechanic.connection import OBDConnection, scan_ports
 from open_mechanic.dtc import DTCReader
 from open_mechanic.local_store import VehicleProfile
+from open_mechanic.manufacturers.stellantis.catalog import load_catalog
+from open_mechanic.manufacturers.stellantis.cli import run_live, run_scan
+from open_mechanic.manufacturers.stellantis.scanner import StellantisScanner
+from open_mechanic.protocols.elm327 import ELM327ConnectionError, ELM327Transport
 from open_mechanic.reader import SENSOR_COMMANDS, SensorPoller, SensorValue
 
 VERSION = "0.1.0"
@@ -165,6 +169,23 @@ def main(argv: list[str] | None = None) -> int:
             )
             cmd.add_argument("--no-graphs", action="store_true", help="Hide live sensor graphs")
 
+    stellantis_scan = subparsers.add_parser(
+        "stellantis-scan", help="Read cataloged Stellantis module DTCs (ephemeral)"
+    )
+    _add_connection_args(stellantis_scan)
+    stellantis_scan.set_defaults(port="/dev/ttyUSB0")
+    stellantis_scan.add_argument("--vehicle", required=True, choices=("wrangler_jl_4xe_2024",))
+
+    stellantis_live = subparsers.add_parser(
+        "stellantis-live", help="Read a finite cataloged Stellantis live-data view"
+    )
+    _add_connection_args(stellantis_live)
+    stellantis_live.set_defaults(port="/dev/ttyUSB0")
+    stellantis_live.add_argument("--vehicle", required=True, choices=("wrangler_jl_4xe_2024",))
+    stellantis_live.add_argument("--group", required=True, choices=("cruise",))
+    stellantis_live.add_argument("--samples", type=int, required=True)
+    stellantis_live.add_argument("--interval", type=float, default=1.0)
+
     args = parser.parse_args(argv)
     console = Console()
     if args.command is None:
@@ -175,8 +196,37 @@ def main(argv: list[str] | None = None) -> int:
         profile = prompt_vehicle_profile(console)
         show_profile(console, profile)
         return 0
+    if args.command in {"stellantis-scan", "stellantis-live"}:
+        return run_stellantis_command(args, console)
 
     return run_direct_tool(args.command, args, console)
+
+
+def run_stellantis_command(args: argparse.Namespace, console: Console) -> int:
+    """Build the single supported read-only hardware path and dispatch it."""
+    catalog = load_catalog(str(args.vehicle))
+    scanner = StellantisScanner(
+        ELM327Transport(str(args.port), timeout=float(args.timeout)),
+        catalog,
+    )
+    console.print("[dim]Hardware path: OBDLink EX; read-only catalog requests only.[/dim]")
+    if args.command == "stellantis-scan":
+        return run_scan(console, scanner)
+    try:
+        return run_live(
+            console,
+            scanner,
+            samples=int(args.samples),
+            interval=float(args.interval),
+        )
+    except ELM327ConnectionError as error:
+        console.print(f"[red]{error}[/red]")
+        console.print(
+            "[yellow]Linux access:[/yellow] verify the device permissions and your dialout "
+            "group or an equivalent udev ACL. Do not run open-mechanic as root."
+        )
+        console.print("[dim]No diagnostic data was saved, cached, or sent anywhere.[/dim]")
+        return 1
 
 
 def _add_connection_args(parser: argparse.ArgumentParser) -> None:

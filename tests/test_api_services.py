@@ -5,9 +5,21 @@ from typing import Any
 
 from open_mechanic.ai.diagnose import DiagnosisResult
 from open_mechanic.api.schemas import DiagnoseRequest
-from open_mechanic.api.services import DiagnosticAPIService, _default_connection
+from open_mechanic.api.services import (
+    DiagnosticAPIService,
+    _default_connection,
+    _default_stellantis_scanner,
+)
 from open_mechanic.dtc import DTCCode
 from open_mechanic.local_store import VehicleProfile
+from open_mechanic.manufacturers.stellantis.catalog import load_catalog
+from open_mechanic.manufacturers.stellantis.models import (
+    LiveValue,
+    ModuleDTC,
+    ModuleScanResult,
+    ModuleState,
+    StellantisScanResult,
+)
 from open_mechanic.reader import SensorValue
 
 
@@ -232,3 +244,90 @@ def test_default_connection_uses_api_tuned_timeout(monkeypatch: Any) -> None:
     _ = _default_connection()
 
     assert captured == {"timeout": 1.5, "max_retries": 2}
+
+
+def test_stellantis_service_serializes_scan_and_provenance_without_vin() -> None:
+    class FakeScanner:
+        def scan_dtcs(self) -> StellantisScanResult:
+            return StellantisScanResult(
+                (
+                    ModuleScanResult(
+                        "powertrain",
+                        "Powertrain Control Module",
+                        ModuleState.RESPONDED,
+                        (ModuleDTC(0x123456, 0x2F),),
+                        "exact_model_year",
+                    ),
+                )
+            )
+
+    service = DiagnosticAPIService(stellantis_scanner_factory=lambda *_: FakeScanner())
+
+    result = service.get_stellantis_dtcs("wrangler_jl_4xe_2024", "/dev/test", 1.0)
+    payload = result.model_dump(mode="json")
+
+    assert payload["vehicle"] == "wrangler_jl_4xe_2024"
+    assert payload["modules"][0]["dtcs"][0] == {
+        "identifier": 0x123456,
+        "display": "0x123456",
+        "definition": "unknown",
+        "status_mask": 0x2F,
+        "status_flags": [
+            "testFailed",
+            "testFailedThisOperationCycle",
+            "pendingDTC",
+            "confirmedDTC",
+            "testFailedSinceLastClear",
+        ],
+    }
+    assert payload["modules"][0]["provenance"]["url"].startswith("https://")
+    assert "vin" not in str(payload).lower()
+
+
+def test_stellantis_service_serializes_live_partial_errors_and_freshness() -> None:
+    timestamp = datetime(2026, 8, 29, 12, 0, 0)
+
+    class FakeScanner:
+        def read_group(self, group: str) -> tuple[LiveValue, ...]:
+            assert group == "cruise"
+            return (
+                LiveValue(
+                    "adaptive_cruise",
+                    "cruise_state",
+                    "Cruise state",
+                    None,
+                    None,
+                    None,
+                    timestamp,
+                    False,
+                    ModuleState.GATEWAY_BLOCKED,
+                    "community_unverified",
+                    "securityAccessDenied (NRC 0x33)",
+                ),
+            )
+
+    service = DiagnosticAPIService(stellantis_scanner_factory=lambda *_: FakeScanner())
+
+    result = service.get_stellantis_live(
+        "wrangler_jl_4xe_2024", "cruise", "/dev/test", 1.0, samples=2, interval=0.1
+    )
+
+    assert len(result.samples) == 2
+    value = result.samples[0].values[0]
+    assert value.module_key == "adaptive_cruise"
+    assert value.fresh is False
+    assert value.error == "securityAccessDenied (NRC 0x33)"
+    assert value.provenance.url.startswith("https://")
+
+
+def test_default_stellantis_scanner_owns_transport_configuration(monkeypatch: Any) -> None:
+    catalog = load_catalog("wrangler_jl_4xe_2024")
+    transport = object()
+    monkeypatch.setattr(
+        "open_mechanic.api.services.ELM327Transport",
+        lambda port, timeout: transport if (port, timeout) == ("/dev/test", 1.5) else None,
+    )
+
+    scanner = _default_stellantis_scanner("/dev/test", 1.5, catalog)
+
+    assert scanner._transport is transport

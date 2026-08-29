@@ -101,6 +101,27 @@ class FakeService:
             timestamp=datetime(2026, 5, 22, 1, 2, 3),
         )
 
+    def get_stellantis_dtcs(self, vehicle: str, port: str, timeout: float) -> Any:
+        from open_mechanic.api.schemas import StellantisScanResponse
+
+        assert (vehicle, port, timeout) == ("wrangler_jl_4xe_2024", "/dev/test", 1.5)
+        return StellantisScanResponse(vehicle=vehicle, modules=[])
+
+    def get_stellantis_live(
+        self, vehicle: str, group: str, port: str, timeout: float, *, samples: int, interval: float
+    ) -> Any:
+        from open_mechanic.api.schemas import StellantisLiveResponse
+
+        assert (vehicle, group, port, timeout, samples, interval) == (
+            "wrangler_jl_4xe_2024",
+            "cruise",
+            "/dev/test",
+            1.5,
+            2,
+            0.2,
+        )
+        return StellantisLiveResponse(vehicle=vehicle, group=group, samples=[])
+
 
 @pytest.fixture
 def anyio_backend() -> str:
@@ -112,9 +133,12 @@ async def _client(
     service: Any, worker_pool: DiagnosticWorkerPool | None = None
 ) -> AsyncIterator[httpx2.AsyncClient]:
     app = create_app(service=service, worker_pool=worker_pool)
-    async with app.router.lifespan_context(app), httpx2.AsyncClient(
-        transport=httpx2.ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with (
+        app.router.lifespan_context(app),
+        httpx2.AsyncClient(
+            transport=httpx2.ASGITransport(app=app), base_url="http://test"
+        ) as client,
+    ):
         yield client
 
 
@@ -164,6 +188,49 @@ async def test_snapshot_endpoint_returns_combined_snapshot() -> None:
     assert response.json()["dtcs"][0]["severity"] == "warning"
     assert service.snapshot_thread_id is not None
     assert service.snapshot_thread_id != event_loop_thread_id
+
+
+@pytest.mark.anyio
+async def test_stellantis_routes_delegate_validated_bounded_requests() -> None:
+    async with _client(FakeService()) as client:
+        scan = await client.get(
+            "/api/stellantis/wrangler_jl_4xe_2024/dtc",
+            params={"port": "/dev/test", "timeout": 1.5},
+        )
+        live = await client.get(
+            "/api/stellantis/wrangler_jl_4xe_2024/live/cruise",
+            params={"port": "/dev/test", "timeout": 1.5, "samples": 2, "interval": 0.2},
+        )
+
+    assert scan.status_code == 200
+    assert scan.json() == {"vehicle": "wrangler_jl_4xe_2024", "modules": []}
+    assert live.status_code == 200
+    assert live.json() == {
+        "vehicle": "wrangler_jl_4xe_2024",
+        "group": "cruise",
+        "samples": [],
+    }
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("path", "params"),
+    [
+        ("/api/stellantis/not_a_vehicle/dtc", {}),
+        ("/api/stellantis/wrangler_jl_4xe_2024/live/not_a_group", {}),
+        ("/api/stellantis/wrangler_jl_4xe_2024/live/cruise", {"samples": 0}),
+        ("/api/stellantis/wrangler_jl_4xe_2024/live/cruise", {"samples": 61}),
+        ("/api/stellantis/wrangler_jl_4xe_2024/live/cruise", {"interval": 0}),
+        ("/api/stellantis/wrangler_jl_4xe_2024/live/cruise", {"interval": 10.1}),
+    ],
+)
+async def test_stellantis_routes_reject_unknown_or_unbounded_requests(
+    path: str, params: dict[str, float]
+) -> None:
+    async with _client(FakeService()) as client:
+        response = await client.get(path, params=params)
+
+    assert response.status_code in {404, 422}
 
 
 @pytest.mark.anyio
@@ -223,8 +290,13 @@ async def test_api_authorization_applies_to_one_request_only() -> None:
         async with asyncio.timeout(2):
             first = await client.post(
                 "/api/diagnose",
-                json={"year": 2020, "make": "Example", "model": "Vehicle", "mileage": 1,
-                      "external_sharing_authorized": True},
+                json={
+                    "year": 2020,
+                    "make": "Example",
+                    "model": "Vehicle",
+                    "mileage": 1,
+                    "external_sharing_authorized": True,
+                },
             )
         async with asyncio.timeout(2):
             second = await client.post(

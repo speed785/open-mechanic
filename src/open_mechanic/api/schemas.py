@@ -67,3 +67,58 @@ class DiagnosisResponse(BaseModel):
     vehicle_str: str
     cached: bool
     timestamp: datetime
+
+
+class ProvenanceResponse(BaseModel):
+    document: str
+    url: str
+    evidence: str
+    applicability: str
+
+
+class StellantisDTCResponse(BaseModel):
+    identifier: int
+    display: str
+    definition: str
+    status_mask: int
+    status_flags: list[str]
+
+
+class StellantisModuleResponse(BaseModel):
+    module_key: str
+    module_name: str
+    state: str
+    dtcs: list[StellantisDTCResponse]
+    provenance: ProvenanceResponse
+    error: str | None
+
+
+class StellantisScanResponse(BaseModel):
+    vehicle: str
+    modules: list[StellantisModuleResponse]
+
+
+class StellantisLiveValueResponse(BaseModel):
+    module_key: str
+    key: str
+    label: str
+    value: float | str | None
+    raw_value: int | None
+    unit: str | None
+    timestamp: datetime
+    fresh: bool
+    state: str
+    provenance: ProvenanceResponse
+    error: str | None
+    event_marker: str | None
+
+
+class StellantisLiveSampleResponse(BaseModel):
+    sample: int
+    values: list[StellantisLiveValueResponse]
+
+
+class StellantisLiveResponse(BaseModel):
+    vehicle: str
+    group: str
+    samples: list[StellantisLiveSampleResponse]

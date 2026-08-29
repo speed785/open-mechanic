@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 from collections.abc import Callable
 
 from open_mechanic.ai.diagnose import DiagnosticEngine
@@ -8,6 +9,10 @@ from open_mechanic.connection import OBDConnection
 from open_mechanic.db.models import VehicleProfile as DiagnosticVehicleProfile
 from open_mechanic.dtc import DTCCode, DTCReader
 from open_mechanic.local_store import VehicleProfile as LocalVehicleProfile
+from open_mechanic.manufacturers.stellantis.catalog import VehicleCatalog, load_catalog
+from open_mechanic.manufacturers.stellantis.cli import dtc_status_flags, validate_live_bounds
+from open_mechanic.manufacturers.stellantis.scanner import StellantisScanner
+from open_mechanic.protocols.elm327 import ELM327Transport
 from open_mechanic.reader import SensorPoller, SensorValue
 
 from .schemas import (
@@ -15,13 +20,21 @@ from .schemas import (
     DiagnosisResponse,
     DTCResponse,
     HealthSnapshotResponse,
+    ProvenanceResponse,
     SensorReadingResponse,
+    StellantisDTCResponse,
+    StellantisLiveResponse,
+    StellantisLiveSampleResponse,
+    StellantisLiveValueResponse,
+    StellantisModuleResponse,
+    StellantisScanResponse,
     VehicleProfileResponse,
 )
 
 ConnectionFactory = Callable[[], OBDConnection]
 ProfileLoader = Callable[[], LocalVehicleProfile | None]
 EngineFactory = Callable[[], DiagnosticEngine]
+StellantisScannerFactory = Callable[[str, float, VehicleCatalog], StellantisScanner]
 
 
 class DiagnosticAPIService:
@@ -30,10 +43,12 @@ class DiagnosticAPIService:
         connection_factory: ConnectionFactory | None = None,
         profile_loader: ProfileLoader = lambda: None,
         engine_factory: EngineFactory | None = None,
+        stellantis_scanner_factory: StellantisScannerFactory | None = None,
     ) -> None:
         self._connection_factory = connection_factory or _default_connection
         self._profile_loader = profile_loader
         self._engine_factory = engine_factory or DiagnosticEngine
+        self._stellantis_scanner_factory = stellantis_scanner_factory or _default_stellantis_scanner
 
     def get_vehicle_profile(self) -> VehicleProfileResponse:
         profile = self._profile_loader()
@@ -159,6 +174,80 @@ class DiagnosticAPIService:
             timestamp=result.timestamp,
         )
 
+    def get_stellantis_dtcs(
+        self, vehicle: str, port: str, timeout: float
+    ) -> StellantisScanResponse:
+        catalog = load_catalog(vehicle)
+        scanner = self._stellantis_scanner_factory(port, timeout, catalog)
+        result = scanner.scan_dtcs()
+        modules = []
+        by_key = {module.key: module for module in catalog.modules}
+        for module in result.modules:
+            source = by_key[module.module_key].source
+            modules.append(
+                StellantisModuleResponse(
+                    module_key=module.module_key,
+                    module_name=module.module_name,
+                    state=module.state.value,
+                    dtcs=[
+                        StellantisDTCResponse(
+                            identifier=dtc.identifier,
+                            display=f"0x{dtc.identifier:06X}",
+                            definition="unknown",
+                            status_mask=dtc.status_mask,
+                            status_flags=list(dtc_status_flags(dtc.status_mask)),
+                        )
+                        for dtc in module.dtcs
+                    ],
+                    provenance=_provenance_response(source),
+                    error=module.error,
+                )
+            )
+        return StellantisScanResponse(vehicle=vehicle, modules=modules)
+
+    def get_stellantis_live(
+        self,
+        vehicle: str,
+        group: str,
+        port: str,
+        timeout: float,
+        *,
+        samples: int,
+        interval: float,
+    ) -> StellantisLiveResponse:
+        validate_live_bounds(samples, interval)
+        catalog = load_catalog(vehicle)
+        scanner = self._stellantis_scanner_factory(port, timeout, catalog)
+        by_key = {module.key: module for module in catalog.modules}
+        rendered_samples = []
+        for sample in range(1, samples + 1):
+            values = scanner.read_group(group)
+            rendered_samples.append(
+                StellantisLiveSampleResponse(
+                    sample=sample,
+                    values=[
+                        StellantisLiveValueResponse(
+                            module_key=value.module_key,
+                            key=value.key,
+                            label=value.label,
+                            value=value.value,
+                            raw_value=value.raw_value,
+                            unit=value.unit,
+                            timestamp=value.timestamp,
+                            fresh=value.fresh,
+                            state=value.state.value,
+                            provenance=_provenance_response(by_key[value.module_key].source),
+                            error=value.error,
+                            event_marker=value.event_marker,
+                        )
+                        for value in values
+                    ],
+                )
+            )
+            if sample < samples:
+                time.sleep(interval)
+        return StellantisLiveResponse(vehicle=vehicle, group=group, samples=rendered_samples)
+
 
 def _sensor_responses(snapshot: dict[str, SensorValue]) -> list[SensorReadingResponse]:
     return [
@@ -190,3 +279,13 @@ def _default_connection() -> OBDConnection:
     timeout = float(os.getenv("OPEN_MECHANIC_API_OBD_TIMEOUT", "3.0"))
     max_retries = int(os.getenv("OPEN_MECHANIC_API_OBD_RETRIES", "1"))
     return OBDConnection(timeout=timeout, max_retries=max_retries)
+
+
+def _default_stellantis_scanner(
+    port: str, timeout: float, catalog: VehicleCatalog
+) -> StellantisScanner:
+    return StellantisScanner(ELM327Transport(port, timeout=timeout), catalog)
+
+
+def _provenance_response(source: object) -> ProvenanceResponse:
+    return ProvenanceResponse.model_validate(source, from_attributes=True)

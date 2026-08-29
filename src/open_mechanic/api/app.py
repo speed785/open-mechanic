@@ -9,7 +9,7 @@ from concurrent.futures import Future as WorkerFuture
 from contextlib import asynccontextmanager
 from typing import ParamSpec, TypeVar, cast
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 
 from open_mechanic.ai.diagnose import ExternalSharingNotAuthorized
 
@@ -19,6 +19,8 @@ from .schemas import (
     DTCResponse,
     HealthResponse,
     HealthSnapshotResponse,
+    StellantisLiveResponse,
+    StellantisScanResponse,
     VehicleProfileResponse,
 )
 from .services import DiagnosticAPIService
@@ -184,6 +186,40 @@ def create_app(
             return await _run_service(diagnostic_workers, api_service.diagnose, request)
         except ExternalSharingNotAuthorized as exc:
             raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+    @app.get("/api/stellantis/{vehicle}/dtc", response_model=StellantisScanResponse)
+    async def stellantis_dtc(
+        vehicle: str,
+        port: str = "/dev/ttyUSB0",
+        timeout: float = Query(1.0, gt=0, le=10),
+    ) -> StellantisScanResponse:
+        if vehicle != "wrangler_jl_4xe_2024":
+            raise HTTPException(status_code=404, detail="unsupported vehicle catalog")
+        return await _run_service(
+            diagnostic_workers, api_service.get_stellantis_dtcs, vehicle, port, timeout
+        )
+
+    @app.get("/api/stellantis/{vehicle}/live/{group}", response_model=StellantisLiveResponse)
+    async def stellantis_live(
+        vehicle: str,
+        group: str,
+        port: str = "/dev/ttyUSB0",
+        timeout: float = Query(1.0, gt=0, le=10),
+        samples: int = Query(5, ge=1, le=60),
+        interval: float = Query(1.0, gt=0, le=10),
+    ) -> StellantisLiveResponse:
+        if vehicle != "wrangler_jl_4xe_2024" or group != "cruise":
+            raise HTTPException(status_code=404, detail="unsupported vehicle or live group")
+        return await _run_service(
+            diagnostic_workers,
+            api_service.get_stellantis_live,
+            vehicle,
+            group,
+            port,
+            timeout,
+            samples=samples,
+            interval=interval,
+        )
 
     return app
 

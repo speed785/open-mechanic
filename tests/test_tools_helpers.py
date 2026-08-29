@@ -12,6 +12,7 @@ from rich.console import Console
 from open_mechanic import tools
 from open_mechanic.dtc import DTCCode
 from open_mechanic.local_store import VehicleProfile
+from open_mechanic.protocols.elm327 import ELM327ConnectionError
 from open_mechanic.reader import SensorValue
 
 
@@ -122,6 +123,120 @@ def test_main_tools_command_dispatches_menu(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setattr(tools, "run_tools_menu", lambda args, console: 6)
 
     assert tools.main(["tools"]) == 6
+
+
+def test_main_dispatches_bounded_stellantis_commands(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: list[argparse.Namespace] = []
+    monkeypatch.setattr(
+        tools, "run_stellantis_command", lambda args, console: captured.append(args) or 7
+    )
+
+    assert (
+        tools.main(
+            [
+                "stellantis-scan",
+                "--vehicle",
+                "wrangler_jl_4xe_2024",
+                "--port",
+                "/dev/test",
+            ]
+        )
+        == 7
+    )
+    assert (
+        tools.main(
+            [
+                "stellantis-live",
+                "--vehicle",
+                "wrangler_jl_4xe_2024",
+                "--group",
+                "cruise",
+                "--samples",
+                "2",
+                "--interval",
+                "0.2",
+            ]
+        )
+        == 7
+    )
+    assert captured[0].vehicle == "wrangler_jl_4xe_2024"
+    assert captured[1].samples == 2
+
+
+def test_stellantis_live_cli_requires_explicit_finite_samples() -> None:
+    with pytest.raises(SystemExit) as error:
+        tools.main(
+            [
+                "stellantis-live",
+                "--vehicle",
+                "wrangler_jl_4xe_2024",
+                "--group",
+                "cruise",
+            ]
+        )
+
+    assert error.value.code == 2
+
+
+def test_stellantis_command_builds_catalog_scanner_and_dispatches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    catalog = object()
+    transport = object()
+    scanner = object()
+    monkeypatch.setattr(tools, "load_catalog", lambda name: catalog)
+    monkeypatch.setattr(
+        tools,
+        "ELM327Transport",
+        lambda port, timeout: transport if (port, timeout) == ("/dev/test", 2.0) else None,
+    )
+    monkeypatch.setattr(
+        tools, "StellantisScanner", lambda actual_transport, actual_catalog: scanner
+    )
+    monkeypatch.setattr(tools, "run_scan", lambda console, actual_scanner: 4)
+
+    result = tools.run_stellantis_command(
+        argparse.Namespace(
+            command="stellantis-scan",
+            vehicle="wrangler_jl_4xe_2024",
+            port="/dev/test",
+            timeout=2.0,
+        ),
+        Console(file=None),
+    )
+
+    assert result == 4
+
+
+def test_stellantis_live_command_passes_finite_bounds_and_reports_permission_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(tools, "load_catalog", lambda name: object())
+    monkeypatch.setattr(tools, "ELM327Transport", lambda port, timeout: object())
+    monkeypatch.setattr(tools, "StellantisScanner", lambda transport, catalog: object())
+
+    def fail(*args: object, **kwargs: object) -> int:
+        assert kwargs["samples"] == 2
+        assert kwargs["interval"] == 0.2
+        raise ELM327ConnectionError("could not open /dev/test")
+
+    monkeypatch.setattr(tools, "run_live", fail)
+    console = Console(record=True)
+
+    result = tools.run_stellantis_command(
+        argparse.Namespace(
+            command="stellantis-live",
+            vehicle="wrangler_jl_4xe_2024",
+            port="/dev/test",
+            timeout=1.0,
+            samples=2,
+            interval=0.2,
+        ),
+        console,
+    )
+
+    assert result == 1
+    assert "dialout" in console.export_text()
 
 
 def test_run_tools_menu_handles_quit_profile_and_tool(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -366,9 +481,12 @@ def test_run_direct_tool_dispatches_tool(
     monkeypatch.setattr(tools, "scan_ports", lambda: [])
     monkeypatch.setattr(tools, patched_name, lambda *args, **kwargs: calls.append(patched_name))
 
-    assert tools.run_direct_tool(
-        tool_name, args, console, profile=VehicleProfile(2018, "Ford", "F-150")
-    ) == 0
+    assert (
+        tools.run_direct_tool(
+            tool_name, args, console, profile=VehicleProfile(2018, "Ford", "F-150")
+        )
+        == 0
+    )
     assert calls == [patched_name]
     assert fake_connection.disconnected is True
 
@@ -379,9 +497,10 @@ def test_run_direct_tool_handles_connection_failure(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(tools, "OBDConnection", lambda **kwargs: _FakeToolConnection(False))
     monkeypatch.setattr(tools, "scan_ports", lambda: [])
 
-    assert tools.run_direct_tool(
-        "dtcs", args, console, profile=VehicleProfile(2018, "Ford", "F-150")
-    ) == 1
+    assert (
+        tools.run_direct_tool("dtcs", args, console, profile=VehicleProfile(2018, "Ford", "F-150"))
+        == 1
+    )
 
 
 def test_run_direct_tool_returns_error_for_unknown_tool(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -390,9 +509,12 @@ def test_run_direct_tool_returns_error_for_unknown_tool(monkeypatch: pytest.Monk
     monkeypatch.setattr(tools, "OBDConnection", lambda **kwargs: _FakeToolConnection(True))
     monkeypatch.setattr(tools, "scan_ports", lambda: [])
 
-    assert tools.run_direct_tool(
-        "bad-tool", args, console, profile=VehicleProfile(2018, "Ford", "F-150")
-    ) == 2
+    assert (
+        tools.run_direct_tool(
+            "bad-tool", args, console, profile=VehicleProfile(2018, "Ford", "F-150")
+        )
+        == 2
+    )
 
 
 def test_run_direct_tool_prompts_for_missing_profile(monkeypatch: pytest.MonkeyPatch) -> None:
