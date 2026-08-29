@@ -2,7 +2,11 @@
 
 from dataclasses import dataclass
 
-from open_mechanic.protocols.requests import DiagnosticRequest, build_uds_request
+from open_mechanic.protocols.requests import (
+    DiagnosticRequest,
+    UnsafeDiagnosticRequest,
+    build_uds_request,
+)
 
 
 class UDSProtocolError(ValueError):
@@ -97,9 +101,19 @@ def parse_read_dtcs(payload: bytes) -> tuple[UDSDTC, ...]:
     )
 
 
-def build_read_did(did: int, *, tx_id: int, rx_id: int) -> DiagnosticRequest:
+def build_read_did(
+    did: int,
+    *,
+    tx_id: int,
+    rx_id: int,
+    cataloged_dids: frozenset[int],
+) -> DiagnosticRequest:
     """Build a catalog-approved ReadDataByIdentifier request (0x22)."""
     _validate_did(did)
+    if type(cataloged_dids) is not frozenset:
+        raise TypeError("cataloged_dids must be an immutable frozenset")
+    if did not in cataloged_dids:
+        raise UnsafeDiagnosticRequest(f"DID 0x{did:04X} is not catalog-approved")
     return build_uds_request(
         0x22,
         did.to_bytes(2, "big"),

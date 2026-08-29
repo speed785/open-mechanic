@@ -1,6 +1,6 @@
 import pytest
 
-from open_mechanic.protocols.requests import DiagnosticProtocol
+from open_mechanic.protocols.requests import DiagnosticProtocol, UnsafeDiagnosticRequest
 from open_mechanic.protocols.uds import (
     UDSDTC,
     UDSNegativeResponse,
@@ -11,6 +11,8 @@ from open_mechanic.protocols.uds import (
     parse_read_did,
     parse_read_dtcs,
 )
+
+_CATALOGED_DIDS = frozenset({0x0001, 0xF190})
 
 
 def test_parses_three_byte_dtcs_and_status_masks() -> None:
@@ -54,6 +56,8 @@ def test_rejects_incorrect_dtc_positive_service(payload: bytes) -> None:
 def test_builds_read_dtcs_with_status_mask() -> None:
     request = build_read_dtcs(tx_id=0x7E0, rx_id=0x7E8, status_mask=0x2F)
     assert request.protocol is DiagnosticProtocol.UDS
+    assert request.tx_id == 0x7E0
+    assert request.rx_id == 0x7E8
     assert request.payload == bytes.fromhex("19022F")
 
 
@@ -64,16 +68,28 @@ def test_rejects_invalid_read_dtc_status_mask(status_mask: int) -> None:
 
 
 def test_builds_read_did_as_cataloged_uds_request() -> None:
-    request = build_read_did(0xF190, tx_id=0x7E0, rx_id=0x7E8)
+    request = build_read_did(0xF190, tx_id=0x7E0, rx_id=0x7E8, cataloged_dids=_CATALOGED_DIDS)
     assert request.protocol is DiagnosticProtocol.UDS
     assert request.cataloged_did is True
+    assert request.tx_id == 0x7E0
+    assert request.rx_id == 0x7E8
     assert request.payload == bytes.fromhex("22F190")
+
+
+def test_rejects_read_did_missing_from_catalog() -> None:
+    with pytest.raises(UnsafeDiagnosticRequest):
+        build_read_did(0xF191, tx_id=0x7E0, rx_id=0x7E8, cataloged_dids=_CATALOGED_DIDS)
+
+
+def test_requires_immutable_read_did_catalog() -> None:
+    with pytest.raises(TypeError):
+        build_read_did(0xF190, tx_id=0x7E0, rx_id=0x7E8, cataloged_dids={0xF190})  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("did", [-1, 0x10000, True])
 def test_rejects_invalid_read_did(did: int) -> None:
     with pytest.raises((TypeError, ValueError)):
-        build_read_did(did, tx_id=0x7E0, rx_id=0x7E8)
+        build_read_did(did, tx_id=0x7E0, rx_id=0x7E8, cataloged_dids=_CATALOGED_DIDS)
 
 
 def test_parses_read_did_payload_after_matching_echo() -> None:
