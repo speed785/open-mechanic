@@ -275,6 +275,36 @@ def test_rejects_provenance_url_without_valid_network_location(
 @pytest.mark.parametrize(
     "url",
     [
+        " https://example.com/protocol",
+        "https://example.com/protocol ",
+        "\thttps://example.com/protocol",
+        "https://example.com/protocol\t",
+        "\nhttps://example.com/protocol",
+        "https://example.com/protocol\n",
+        "\rhttps://example.com/protocol",
+        "https://example.com/protocol\r",
+        "https://exa mple.com/protocol",
+        "https://exa\tmple.com/protocol",
+        "https://exa\nmple.com/protocol",
+        "https://exa\rmple.com/protocol",
+        "https://example.com/proto\u00a0col",
+    ],
+)
+def test_rejects_provenance_url_with_raw_whitespace(
+    monkeypatch: pytest.MonkeyPatch,
+    url: str,
+) -> None:
+    data = _valid_catalog_data()
+    data["modules"][0]["source"]["url"] = url
+    _install_catalog(monkeypatch, data)
+
+    with pytest.raises(CatalogValidationError, match="provenance"):
+        load_catalog("synthetic")
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
         "https://example.com/protocol",
         "https://192.0.2.1/protocol",
         "https://[2001:db8::1]/protocol",

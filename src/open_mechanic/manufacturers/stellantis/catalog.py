@@ -142,6 +142,8 @@ def _is_valid_network_host(hostname: str) -> bool:
 
 
 def _is_https_url_with_network_location(value: str) -> bool:
+    if any(character.isspace() for character in value):
+        return False
     try:
         parsed = urlsplit(value)
         _port = parsed.port
