@@ -80,7 +80,9 @@ class StellantisScanner:
             if did.group == group and 0x22 in module.services
         )
         if not requested:
-            return tuple(self._not_cataloged_value(module, group) for module in self._catalog.modules)
+            return tuple(
+                self._not_cataloged_value(module, group) for module in self._catalog.modules
+            )
 
         values: list[LiveValue] = []
         blocked_modules: dict[str, str] = {}
@@ -109,7 +111,9 @@ class StellantisScanner:
 
     def _scan_module_dtcs(self, module: ModuleDefinition) -> ModuleScanResult:
         try:
-            payload = self._exchange_payload(build_read_dtcs(tx_id=module.tx_id, rx_id=module.rx_id))
+            payload = self._exchange_payload(
+                build_read_dtcs(tx_id=module.tx_id, rx_id=module.rx_id)
+            )
         except (TimeoutError, ELM327TimeoutError) as error:
             return self._scan_result(module, ModuleState.TIMED_OUT, error=str(error))
         except ELM327Error as error:
@@ -120,7 +124,9 @@ class StellantisScanner:
             return self._scan_result(module, state, error=response_error)
         assert payload is not None
         try:
-            dtcs = tuple(ModuleDTC(dtc.identifier, dtc.status_mask) for dtc in parse_read_dtcs(payload))
+            dtcs = tuple(
+                ModuleDTC(dtc.identifier, dtc.status_mask) for dtc in parse_read_dtcs(payload)
+            )
         except UDSProtocolError as error:
             return self._scan_result(module, ModuleState.NEGATIVE_RESPONSE, error=str(error))
         return self._scan_result(module, ModuleState.RESPONDED, dtcs=dtcs)
@@ -136,7 +142,9 @@ class StellantisScanner:
             )
             payload = self._exchange_payload(request)
         except (TimeoutError, ELM327TimeoutError) as error:
-            return self._unavailable_value(module, did, timestamp, ModuleState.TIMED_OUT, str(error))
+            return self._unavailable_value(
+                module, did, timestamp, ModuleState.TIMED_OUT, str(error)
+            )
         except (ELM327Error, UDSProtocolError) as error:
             return self._unavailable_value(
                 module, did, timestamp, ModuleState.NEGATIVE_RESPONSE, str(error)
@@ -192,7 +200,9 @@ class StellantisScanner:
                 f"expected 0x{expected_service:02X}, got 0x{response.service:02X} "
                 f"({response.meaning}, NRC 0x{response.code:02X})",
             )
-        state = ModuleState.GATEWAY_BLOCKED if response.code == 0x33 else ModuleState.NEGATIVE_RESPONSE
+        state = (
+            ModuleState.GATEWAY_BLOCKED if response.code == 0x33 else ModuleState.NEGATIVE_RESPONSE
+        )
         return (
             state,
             f"negative response service 0x{response.service:02X}: "
@@ -317,10 +327,18 @@ class StellantisScanner:
         if value.key != "cruise_state" or not isinstance(value.value, str):
             return value
         previous = next(
-            (prior for prior in self._last_cruise_values if prior.module_key == value.module_key and prior.key == value.key),
+            (
+                prior
+                for prior in self._last_cruise_values
+                if prior.module_key == value.module_key and prior.key == value.key
+            ),
             None,
         )
-        if previous is None or previous.value != "engaged" or value.value not in {"cancelled", "unavailable"}:
+        if (
+            previous is None
+            or previous.value != "engaged"
+            or value.value not in {"cancelled", "unavailable"}
+        ):
             return value
         return LiveValue(
             value.module_key,

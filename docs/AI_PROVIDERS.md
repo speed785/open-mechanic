@@ -1,27 +1,43 @@
 # AI Provider Strategy
 
-Last reviewed: 2026-05-22
+Last reviewed: 2026-08-29
 
-open-mechanic currently uses Anthropic Claude through `ANTHROPIC_API_KEY`. That is the only implemented provider and should remain the default until a real provider abstraction is added.
+Local diagnostics do not need an AI provider or network connection. Anthropic Claude
+is the only implemented external provider. Sending diagnostic data requires **explicit per-request authorization**;
+there is no standing consent.
 
-## Current State
+## Authorization flow
 
-- `DiagnosticEngine` owns Anthropic client setup, prompt submission, response parsing, cache behavior, and disclaimer injection.
-- `ANTHROPIC_MODEL` can override the default model.
-- API and CLI callers should depend on `DiagnosticEngine` behavior instead of calling an LLM SDK directly.
+- Interactive diagnosis displays the categories that would be transmitted and asks
+  for confirmation for that invocation.
+- Non-interactive CLI use requires `--share-with-ai`.
+- API use requires `external_sharing_authorized: true`; otherwise it returns `403`
+  without calling the provider.
+- Local scan, DTC, snapshot, and Stellantis commands never invoke AI.
+- Authorization is not stored. Provider requests and responses are not cached.
+- The API's `cached` field is retained for response compatibility and is always false.
 
-## Near-Term Direction
+Example with invented synthetic vehicle context:
 
-1. Keep Anthropic as the supported production provider.
-2. Extract a provider protocol only when adding a second real backend.
-3. Preserve the normalized `DiagnosisResult` shape across providers.
-4. Require every provider path to include the safety disclaimer.
-5. Keep provider tests mocked. CI must never require live API credentials.
+```bash
+python scripts/diagnose.py --vehicle "Synthetic Example Vehicle" \
+  --mileage 10000 --protocol 6 --share-with-ai
+```
 
-## Candidate Future Providers
+Before consenting, assume vehicle context, DTCs, and sensor snapshot fields shown by the
+prompt will leave the local machine. Do not share a VIN or other identifying value
+unless it is genuinely necessary and intended.
 
-- OpenAI Responses API for cloud-hosted diagnosis.
-- Local OpenAI-compatible servers for offline experiments.
-- Rule-based fallback for common DTCs when no API key is configured.
+## Provider rules
 
-Provider selection should be explicit through environment variables or config, not auto-detected from whichever key happens to be present.
+- `DiagnosticEngine` owns client setup, prompt submission, response validation, and
+  disclaimer injection.
+- Read credentials only from environment variables; never commit them.
+- Every result includes the informational-only safety disclaimer.
+- Provider tests use synthetic data and mocked clients. CI never uses live credentials.
+- A future provider must preserve the same consent, no-cache, privacy, error, and
+  disclaimer guarantees.
+
+Possible future work includes an explicit provider interface, an OpenAI Responses API
+backend, and a fully local backend. Provider selection must be deliberate, never
+auto-detected from whichever credential happens to exist.

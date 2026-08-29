@@ -190,8 +190,14 @@ def test_driver_warning_is_printed_before_first_live_acquisition() -> None:
             events.append("read_group")
             return ()
 
-    assert run_live(
-        RecordingConsole(file=None), Scanner(), samples=1, interval=0.1  # type: ignore[arg-type]
-    ) == 0
+    assert (
+        run_live(
+            RecordingConsole(file=None),
+            Scanner(),
+            samples=1,
+            interval=0.1,  # type: ignore[arg-type]
+        )
+        == 0
+    )
     assert "passenger or qualified technician" in events[0]
     assert events.index("read_group") > 0

@@ -103,6 +103,7 @@ class DiagnosticEngine:
 
         self._model: str = model or os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-5"
         self._client: anthropic.Anthropic = anthropic.Anthropic(api_key=resolved_api_key)
+
     def diagnose(
         self,
         vehicle: VehicleProfile,

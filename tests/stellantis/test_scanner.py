@@ -57,7 +57,9 @@ def _source(*, applicability: str = "exact_model_year") -> Provenance:
     return Provenance(
         document="Synthetic test fixture",
         url="https://example.test/fixture",
-        evidence="vehicle_fixture" if applicability == "exact_model_year" else "community_reference",
+        evidence="vehicle_fixture"
+        if applicability == "exact_model_year"
+        else "community_reference",
         applicability=applicability,
     )
 
@@ -282,10 +284,16 @@ def test_live_read_reports_timeouts_malformed_responses_and_wrong_responders() -
     did = _did(0x1234, "wheel speed")
     timeout_transport = FakeTransport({0x600: TimeoutError("read timed out")})
     malformed_transport = FakeTransport({0x600: bytes.fromhex("7F")})
-    wrong_responder_transport = FakeTransport({0x600: [_Response(bytes.fromhex("62123450"), 0x609)]})
+    wrong_responder_transport = FakeTransport(
+        {0x600: [_Response(bytes.fromhex("62123450"), 0x609)]}
+    )
 
-    timeout_value = StellantisScanner(timeout_transport, _catalog(dids=(did,))).read_group("cruise")[0]
-    malformed_value = StellantisScanner(malformed_transport, _catalog(dids=(did,))).read_group("cruise")[0]
+    timeout_value = StellantisScanner(timeout_transport, _catalog(dids=(did,))).read_group(
+        "cruise"
+    )[0]
+    malformed_value = StellantisScanner(malformed_transport, _catalog(dids=(did,))).read_group(
+        "cruise"
+    )[0]
     wrong_responder_value = StellantisScanner(
         wrong_responder_transport, _catalog(dids=(did,))
     ).read_group("cruise")[0]
@@ -298,9 +306,9 @@ def test_live_read_reports_timeouts_malformed_responses_and_wrong_responders() -
 def test_live_read_rejects_a_positive_response_for_the_wrong_did() -> None:
     transport = FakeTransport({0x600: bytes.fromhex("62123550")})
 
-    value = StellantisScanner(
-        transport, _catalog(dids=(_did(0x1234, "wheel speed"),))
-    ).read_group("cruise")[0]
+    value = StellantisScanner(transport, _catalog(dids=(_did(0x1234, "wheel speed"),))).read_group(
+        "cruise"
+    )[0]
 
     assert value.state is ModuleState.NEGATIVE_RESPONSE
 
@@ -319,7 +327,9 @@ def test_live_read_decodes_scaled_numeric_value_and_rejects_wrong_width() -> Non
         scaled.enum_map,
         scaled.source,
     )
-    transport = FakeTransport({0x600: deque([bytes.fromhex("6212340066"), bytes.fromhex("62123401")])})
+    transport = FakeTransport(
+        {0x600: deque([bytes.fromhex("6212340066"), bytes.fromhex("62123401")])}
+    )
     scanner = StellantisScanner(transport, _catalog(dids=(scaled,)))
 
     first = scanner.read_group("cruise")[0]
@@ -331,7 +341,9 @@ def test_live_read_decodes_scaled_numeric_value_and_rejects_wrong_width() -> Non
 
 def test_cruise_transition_adds_evidence_marker_only_after_an_engaged_sample() -> None:
     state = _did(0x1234, "cruise state", unit=None, enum_map={1: "engaged", 2: "cancelled"})
-    transport = FakeTransport({0x600: deque([bytes.fromhex("62123401"), bytes.fromhex("62123402")])})
+    transport = FakeTransport(
+        {0x600: deque([bytes.fromhex("62123401"), bytes.fromhex("62123402")])}
+    )
     scanner = StellantisScanner(transport, _catalog(dids=(state,)))
 
     first = scanner.read_group("cruise")[0]

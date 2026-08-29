@@ -181,10 +181,44 @@ def test_stellantis_live_cli_requires_explicit_finite_samples() -> None:
 @pytest.mark.parametrize(
     "arguments",
     [
-        ["stellantis-live", "--vehicle", "wrangler_jl_4xe_2024", "--group", "cruise", "--samples", "0"],
-        ["stellantis-live", "--vehicle", "wrangler_jl_4xe_2024", "--group", "cruise", "--samples", "61"],
-        ["stellantis-live", "--vehicle", "wrangler_jl_4xe_2024", "--group", "cruise", "--samples", "many"],
-        ["stellantis-live", "--vehicle", "wrangler_jl_4xe_2024", "--group", "cruise", "--samples", "1", "--interval", "0"],
+        [
+            "stellantis-live",
+            "--vehicle",
+            "wrangler_jl_4xe_2024",
+            "--group",
+            "cruise",
+            "--samples",
+            "0",
+        ],
+        [
+            "stellantis-live",
+            "--vehicle",
+            "wrangler_jl_4xe_2024",
+            "--group",
+            "cruise",
+            "--samples",
+            "61",
+        ],
+        [
+            "stellantis-live",
+            "--vehicle",
+            "wrangler_jl_4xe_2024",
+            "--group",
+            "cruise",
+            "--samples",
+            "many",
+        ],
+        [
+            "stellantis-live",
+            "--vehicle",
+            "wrangler_jl_4xe_2024",
+            "--group",
+            "cruise",
+            "--samples",
+            "1",
+            "--interval",
+            "0",
+        ],
         ["stellantis-scan", "--vehicle", "wrangler_jl_4xe_2024", "--timeout", "0"],
         ["stellantis-scan", "--vehicle", "wrangler_jl_4xe_2024", "--timeout", "later"],
         ["stellantis-scan", "--vehicle", "wrangler_jl_4xe_2024", "--protocol", "7"],
@@ -211,7 +245,9 @@ def test_invalid_stellantis_cli_values_exit_concisely_before_hardware(
     assert "Traceback" not in captured.err
 
 
-def test_stellantis_help_documents_fixed_protocol_and_baudrate(capsys: pytest.CaptureFixture[str]) -> None:
+def test_stellantis_help_documents_fixed_protocol_and_baudrate(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     with pytest.raises(SystemExit) as error:
         tools.main(["stellantis-scan", "--help"])
 
