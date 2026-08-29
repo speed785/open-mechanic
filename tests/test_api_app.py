@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import threading
 from datetime import datetime
+from types import SimpleNamespace
+from typing import Any
 
 import httpx2
 import pytest
 
+from open_mechanic.ai.diagnose import DiagnosticEngine, ExternalSharingNotAuthorized
 from open_mechanic.api import create_app
 from open_mechanic.api.schemas import (
     DiagnoseRequest,
@@ -14,11 +18,13 @@ from open_mechanic.api.schemas import (
     SensorReadingResponse,
     VehicleProfileResponse,
 )
+from open_mechanic.api.services import DiagnosticAPIService
 
 
 class FakeService:
     def __init__(self) -> None:
         self.diagnose_requests: list[DiagnoseRequest] = []
+        self.snapshot_thread_id: int | None = None
 
     def get_vehicle_profile(self) -> VehicleProfileResponse:
         return VehicleProfileResponse(
@@ -58,6 +64,7 @@ class FakeService:
         ]
 
     def get_snapshot(self) -> HealthSnapshotResponse:
+        self.snapshot_thread_id = threading.get_ident()
         return HealthSnapshotResponse(
             connected=True,
             port="/dev/test",
@@ -131,11 +138,15 @@ async def test_dtc_endpoint_returns_fault_codes() -> None:
 
 @pytest.mark.anyio
 async def test_snapshot_endpoint_returns_combined_snapshot() -> None:
-    async with httpx2.AsyncClient(transport=_transport(FakeService()), base_url="http://test") as client:
+    service = FakeService()
+    event_loop_thread_id = threading.get_ident()
+    async with httpx2.AsyncClient(transport=_transport(service), base_url="http://test") as client:
         response = await client.get("/api/snapshot")
 
     assert response.status_code == 200
     assert response.json()["dtcs"][0]["severity"] == "warning"
+    assert service.snapshot_thread_id is not None
+    assert service.snapshot_thread_id != event_loop_thread_id
 
 
 @pytest.mark.anyio
@@ -160,18 +171,36 @@ async def test_diagnose_endpoint_passes_request_to_service() -> None:
 
 @pytest.mark.anyio
 async def test_api_authorization_applies_to_one_request_only() -> None:
-    service = FakeService()
-    async with httpx2.AsyncClient(transport=_transport(service), base_url="http://test") as client:
+    class RecordingMessages:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        def create(self, **kwargs: Any) -> SimpleNamespace:
+            self.calls.append(kwargs)
+            return SimpleNamespace(
+                content=[SimpleNamespace(text='{"summary":"ok","severity":"info"}')]
+            )
+
+    messages = RecordingMessages()
+    engine = DiagnosticEngine(api_key="test")
+    engine._client = SimpleNamespace(messages=messages)  # type: ignore[assignment]
+    service = DiagnosticAPIService(engine_factory=lambda: engine)
+    empty_snapshot = HealthSnapshotResponse(
+        connected=False, port=None, protocol=None, sensors=[], dtcs=[]
+    )
+    service.get_snapshot = lambda: empty_snapshot  # type: ignore[method-assign]
+    transport = _transport(service)  # type: ignore[arg-type]
+    async with httpx2.AsyncClient(transport=transport, base_url="http://test") as client:
         first = await client.post(
             "/api/diagnose",
             json={"year": 2020, "make": "Example", "model": "Vehicle", "mileage": 1,
                   "external_sharing_authorized": True},
         )
-        second = await client.post(
-            "/api/diagnose",
-            json={"year": 2020, "make": "Example", "model": "Vehicle", "mileage": 1},
-        )
+        with pytest.raises(ExternalSharingNotAuthorized):
+            await client.post(
+                "/api/diagnose",
+                json={"year": 2020, "make": "Example", "model": "Vehicle", "mileage": 1},
+            )
 
     assert first.status_code == 200
-    assert second.status_code == 200
-    assert [request.external_sharing_authorized for request in service.diagnose_requests] == [True, False]
+    assert len(messages.calls) == 1
