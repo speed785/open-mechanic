@@ -1,4 +1,6 @@
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from typing import cast
 
 import pytest
 
@@ -20,6 +22,7 @@ class FakeSerial:
         self.pending = b""
         self.writes: list[bytes] = []
         self.closed = False
+        self.close_raises = False
         self.short_writes = False
 
     def write(self, data: bytes) -> int:
@@ -40,6 +43,22 @@ class FakeSerial:
 
     def close(self) -> None:
         self.closed = True
+        if self.close_raises:
+            raise OSError("close failed")
+
+
+@dataclass(frozen=True)
+class ForgedRequest:
+    protocol: object = object()
+    service: int = 0x2E
+    parameters: bytes = bytes.fromhex("F19001")
+    tx_id: int = 0x7E0
+    rx_id: int = 0x7E8
+    cataloged_did: bool = True
+
+    @property
+    def payload(self) -> bytes:
+        return bytes([self.service]) + self.parameters
 
 
 def _responses(*, exchange: str | bytes) -> dict[str, str | bytes]:
@@ -106,6 +125,38 @@ def test_exchange_returns_no_responses_for_no_data() -> None:
     assert transport.exchange(_request()) == []
 
 
+def test_exchange_rejects_forged_request_without_writing_to_serial() -> None:
+    serial = FakeSerial(_responses(exchange="NO DATA\r>"))
+    transport = ELM327Transport("/dev/test", serial_factory=_factory(serial))
+    transport.open()
+    serial.writes.clear()
+
+    with pytest.raises(ELM327ProtocolError):
+        transport.exchange(cast(DiagnosticRequest, ForgedRequest()))
+
+    assert serial.writes == []
+
+
+@pytest.mark.parametrize(
+    "field, value",
+    [("service", 0x2E), ("parameters", "F190")],
+)
+def test_exchange_revalidates_mutated_request_without_writing_to_serial(
+    field: str, value: int | str
+) -> None:
+    serial = FakeSerial(_responses(exchange="NO DATA\r>"))
+    transport = ELM327Transport("/dev/test", serial_factory=_factory(serial))
+    request = _request()
+    object.__setattr__(request, field, value)
+    transport.open()
+    serial.writes.clear()
+
+    with pytest.raises(ELM327ProtocolError):
+        transport.exchange(request)
+
+    assert serial.writes == []
+
+
 def test_exchange_parses_compact_headers_when_spaces_are_disabled() -> None:
     serial = FakeSerial(_responses(exchange="7E80362F190\r>"))
     transport = ELM327Transport("/dev/test", serial_factory=_factory(serial))
@@ -170,6 +221,14 @@ def test_open_uses_default_serial_factory(monkeypatch: pytest.MonkeyPatch) -> No
         "timeout": 2.5,
         "write_timeout": 2.5,
     }
+
+
+def test_open_accepts_expected_ate0_echo_before_disabling_echo() -> None:
+    replies = _responses(exchange="NO DATA\r>")
+    replies["ATE0"] = "ATE0\rOK\r>"
+    transport = ELM327Transport("/dev/test", serial_factory=_factory(FakeSerial(replies)))
+
+    transport.open()
 
 
 def test_constructor_rejects_nonpositive_timeouts() -> None:
@@ -259,6 +318,18 @@ def test_open_rejects_echo_after_echo_is_disabled() -> None:
 
     with pytest.raises(ELM327ProtocolError):
         ELM327Transport("/dev/test", serial_factory=_factory(serial)).open()
+
+
+def test_open_preserves_initialization_error_when_cleanup_fails() -> None:
+    replies = _responses(exchange="NO DATA\r>")
+    replies["ATE0"] = "NO\r>"
+    serial = FakeSerial(replies)
+    serial.close_raises = True
+
+    with pytest.raises(ELM327ProtocolError, match="did not acknowledge ATE0"):
+        ELM327Transport("/dev/test", serial_factory=_factory(serial)).open()
+
+    assert serial.closed is True
 
 
 def test_close_closes_serial_after_exchange_exception() -> None:

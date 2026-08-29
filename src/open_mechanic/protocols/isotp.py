@@ -46,6 +46,8 @@ def reassemble_isotp(frames: list[CANFrame]) -> bytes:
     first = frames[0].data
     frame_type = first[0] >> 4
     if frame_type == 0:
+        if len(frames) != 1:
+            raise ISOTPFormatError("single-frame response contains trailing frames")
         return _single_frame_payload(first)
     if frame_type != 1:
         raise ISOTPFormatError("response must begin with a single or first ISO-TP frame")
@@ -76,7 +78,7 @@ def _multiframe_payload(frames: list[CANFrame]) -> bytes:
 
     payload = bytearray(first[2:])
     expected_sequence = 1
-    for frame in frames[1:]:
+    for frame_index, frame in enumerate(frames[1:], start=1):
         data = frame.data
         if data[0] >> 4 != 2:
             raise ISOTPFormatError("multi-frame response contains a non-consecutive frame")
@@ -85,6 +87,8 @@ def _multiframe_payload(frames: list[CANFrame]) -> bytes:
         payload.extend(data[1:])
         expected_sequence = (expected_sequence + 1) & 0x0F
         if len(payload) >= length:
+            if frame_index != len(frames) - 1:
+                raise ISOTPFormatError("multi-frame response contains trailing frames")
             break
 
     if len(payload) < length:

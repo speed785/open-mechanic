@@ -16,6 +16,15 @@ def test_reassembles_single_frame_payload() -> None:
     )
 
 
+def test_rejects_trailing_frame_after_single_frame_response() -> None:
+    frames = [
+        CANFrame(0x7E8, bytes.fromhex("03590102AABBCCDD")),
+        CANFrame(0x7E8, bytes.fromhex("03590103AABBCCDD")),
+    ]
+    with pytest.raises(ISOTPFormatError):
+        reassemble_isotp(frames)
+
+
 def test_rejects_empty_frame_list() -> None:
     with pytest.raises(ISOTPFormatError):
         reassemble_isotp([])
@@ -36,6 +45,16 @@ def test_reassembles_multiframe_payload() -> None:
         CANFrame(0x7E8, bytes.fromhex("2123456700000000")),
     ]
     assert reassemble_isotp(frames) == bytes.fromhex("5902ABCDEF0123456700")
+
+
+def test_rejects_trailing_frame_after_multiframe_payload_is_complete() -> None:
+    frames = [
+        CANFrame(0x7E8, bytes.fromhex("10085902ABCDEF01")),
+        CANFrame(0x7E8, bytes.fromhex("2123450000000000")),
+        CANFrame(0x7E8, bytes.fromhex("2200000000000000")),
+    ]
+    with pytest.raises(ISOTPFormatError):
+        reassemble_isotp(frames)
 
 
 def test_rejects_wrong_sequence_number() -> None:

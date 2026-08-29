@@ -6,6 +6,7 @@ import re
 import time
 from collections import defaultdict
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import Protocol, cast
 
@@ -101,14 +102,15 @@ class ELM327Transport:
                 if command == "ATE0":
                     self._echo_disabled = True
         except (OSError, serial.SerialException) as error:
-            self.close()
+            self._cleanup_open_failure()
             raise ELM327ConnectionError(f"could not open OBD adapter at {self._port}") from error
         except Exception:
-            self.close()
+            self._cleanup_open_failure()
             raise
 
     def exchange(self, request: DiagnosticRequest) -> list[RawDiagnosticResponse]:
         """Send one bounded single-frame request and parse raw ISO-TP responses."""
+        request = self._validated_request(request)
         self._require_open()
         self._validate_can_id(request.tx_id, "transmit")
         self._validate_can_id(request.rx_id, "receive")
@@ -139,6 +141,10 @@ class ELM327Transport:
         self._echo_disabled = False
         if current_serial is not None:
             current_serial.close()
+
+    def _cleanup_open_failure(self) -> None:
+        with suppress(Exception):
+            self.close()
 
     def _command(self, command: str) -> list[str]:
         serial_port = self._require_open()
@@ -181,6 +187,8 @@ class ELM327Transport:
             if not lines:
                 raise ELM327ProtocolError("adapter did not identify itself after reset")
             return
+        if command == "ATE0" and lines == ["ATE0", "OK"]:
+            lines = ["OK"]
         ELM327Transport._expect_ok(lines, command)
 
     @staticmethod
@@ -203,6 +211,30 @@ class ELM327Transport:
     def _validate_can_id(can_id: int, direction: str) -> None:
         if not 0 <= can_id <= 0x7FF:
             raise ELM327ProtocolError(f"{direction} CAN ID must be an 11-bit value")
+
+    @staticmethod
+    def _validated_request(request: DiagnosticRequest) -> DiagnosticRequest:
+        if not isinstance(request, DiagnosticRequest):
+            raise ELM327ProtocolError("transport requires a validated DiagnosticRequest")
+        if (
+            type(request.service) is not int
+            or type(request.parameters) is not bytes
+            or type(request.tx_id) is not int
+            or type(request.rx_id) is not int
+            or type(request.cataloged_did) is not bool
+        ):
+            raise ELM327ProtocolError("diagnostic request fields have invalid types")
+        try:
+            return DiagnosticRequest(
+                request.protocol,
+                request.service,
+                request.parameters,
+                request.tx_id,
+                request.rx_id,
+                request.cataloged_did,
+            )
+        except (TypeError, ValueError) as error:
+            raise ELM327ProtocolError("diagnostic request failed transport validation") from error
 
     def _require_open(self) -> SerialPort:
         if self._serial is None:
