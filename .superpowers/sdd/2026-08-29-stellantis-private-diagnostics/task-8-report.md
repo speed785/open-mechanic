@@ -47,3 +47,12 @@ that would be shared and exits before adapter or AI access without prompting.
 
 Post-fix verification: Ruff format/check and mypy passed; all 532 tests passed with
 100.00% package line coverage under `-W error`. Hardware and network remained unused.
+
+## Re-review fix: implemented AI CLI entry point
+
+The second review found the design still named a nonexistent console-script diagnosis
+subcommand. A regression assertion was added and observed failing, then the design was
+corrected to the implemented `python scripts/diagnose.py ... --share-with-ai` form with
+invented synthetic arguments. A tracked-Markdown scan found no remaining instance of
+the nonexistent subcommand. Full Ruff, mypy, and 532-test `-W error` verification again
+passed at 100.00% package line coverage. Hardware and network remained unused.

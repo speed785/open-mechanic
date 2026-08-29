@@ -40,6 +40,7 @@ def test_api_and_ai_docs_require_explicit_external_sharing() -> None:
     readme = _read("README.md")
     api = _read("docs/API.md")
     providers = _read("docs/AI_PROVIDERS.md")
+    design = _read("docs/superpowers/specs/2026-08-29-stellantis-private-diagnostics-design.md")
 
     assert "external_sharing_authorized" in api
     assert "403" in api
@@ -52,6 +53,8 @@ def test_api_and_ai_docs_require_explicit_external_sharing() -> None:
     assert "Every CLI AI invocation requires `--share-with-ai`" in readme
     assert "Interactive use confirms" not in readme
     assert "asks for confirmation" not in providers
+    assert "python scripts/diagnose.py" in design
+    assert "open-mechanic diagnose" not in design
 
 
 def test_contributor_docs_preserve_safety_and_data_boundaries() -> None:

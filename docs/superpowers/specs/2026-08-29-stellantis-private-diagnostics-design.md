@@ -105,7 +105,7 @@ Add these CLI operations:
 
 - `open-mechanic stellantis-scan`: module discovery plus full read-only DTC report.
 - `open-mechanic stellantis-live --group cruise --samples N --interval SECONDS`: bounded ephemeral cruise-related live display.
-- `open-mechanic diagnose --share-with-ai`: explicit external analysis after disclosure.
+- `python scripts/diagnose.py --vehicle "Synthetic Example Vehicle" --mileage 10000 --share-with-ai`: explicit external analysis after disclosure (invented synthetic arguments).
 
 The existing generic commands remain available but become non-persistent. Direct diagnostic commands do not require a saved profile.
 
