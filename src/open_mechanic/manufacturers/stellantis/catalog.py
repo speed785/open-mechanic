@@ -142,7 +142,11 @@ def _is_valid_network_host(hostname: str) -> bool:
 
 
 def _is_https_url_with_network_location(value: str) -> bool:
-    if any(character.isspace() for character in value):
+    # urlsplit normalizes some raw controls, so reject them before parsing.
+    if any(
+        character.isspace() or ord(character) < 0x20 or ord(character) == 0x7F
+        for character in value
+    ):
         return False
     try:
         parsed = urlsplit(value)

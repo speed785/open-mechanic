@@ -303,6 +303,33 @@ def test_rejects_provenance_url_with_raw_whitespace(
 
 
 @pytest.mark.parametrize(
+    "url_template",
+    [
+        "{control}https://example.com/protocol",
+        "https://example.com/proto{control}col",
+        "https://example.com/protocol{control}",
+    ],
+    ids=["leading", "embedded", "trailing"],
+)
+@pytest.mark.parametrize(
+    "code_point",
+    [*range(0x20), 0x7F],
+    ids=lambda code_point: f"U+{code_point:04X}",
+)
+def test_rejects_provenance_url_with_raw_ascii_control_character(
+    monkeypatch: pytest.MonkeyPatch,
+    url_template: str,
+    code_point: int,
+) -> None:
+    data = _valid_catalog_data()
+    data["modules"][0]["source"]["url"] = url_template.format(control=chr(code_point))
+    _install_catalog(monkeypatch, data)
+
+    with pytest.raises(CatalogValidationError, match="provenance"):
+        load_catalog("synthetic")
+
+
+@pytest.mark.parametrize(
     "url",
     [
         "https://example.com/protocol",
