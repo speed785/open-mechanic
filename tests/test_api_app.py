@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import threading
+import time
 from collections.abc import AsyncIterator
+from concurrent.futures import Future as WorkerFuture
 from contextlib import asynccontextmanager
 from datetime import datetime
 from types import SimpleNamespace
@@ -13,7 +15,11 @@ import pytest
 
 from open_mechanic.ai.diagnose import DiagnosticEngine
 from open_mechanic.api import create_app
-from open_mechanic.api.app import DiagnosticWorkerPool
+from open_mechanic.api.app import (
+    DiagnosticWorkerPool,
+    WorkerPoolClosed,
+    WorkerPoolSaturated,
+)
 from open_mechanic.api.schemas import (
     DiagnoseRequest,
     DiagnosisResponse,
@@ -102,8 +108,10 @@ def anyio_backend() -> str:
 
 
 @asynccontextmanager
-async def _client(service: Any) -> AsyncIterator[httpx2.AsyncClient]:
-    app = create_app(service=service)
+async def _client(
+    service: Any, worker_pool: DiagnosticWorkerPool | None = None
+) -> AsyncIterator[httpx2.AsyncClient]:
+    app = create_app(service=service, worker_pool=worker_pool)
     async with app.router.lifespan_context(app), httpx2.AsyncClient(
         transport=httpx2.ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -245,6 +253,50 @@ async def test_worker_pool_is_bounded_and_propagates_exceptions() -> None:
 
 
 @pytest.mark.anyio
+async def test_worker_pool_rejects_when_pending_queue_is_full() -> None:
+    pool = DiagnosticWorkerPool(max_workers=1, max_pending_jobs=1)
+    started = threading.Event()
+    release = threading.Event()
+
+    def block() -> None:
+        started.set()
+        release.wait(timeout=1)
+
+    running = asyncio.create_task(pool.run(block))
+    while not started.is_set():
+        await asyncio.sleep(0)
+    queued = asyncio.create_task(pool.run(lambda: None))
+    await asyncio.sleep(0)
+
+    with pytest.raises(WorkerPoolSaturated):
+        await pool.run(lambda: None)
+
+    release.set()
+    await running
+    await queued
+    pool.shutdown()
+
+
+@pytest.mark.anyio
+async def test_saturated_api_returns_503() -> None:
+    pool = DiagnosticWorkerPool(max_workers=1, max_pending_jobs=1)
+    started = threading.Event()
+    release = threading.Event()
+    running = asyncio.create_task(pool.run(lambda: (started.set(), release.wait(timeout=1))))
+    while not started.is_set():
+        await asyncio.sleep(0)
+    queued = asyncio.create_task(pool.run(lambda: None))
+    await asyncio.sleep(0)
+
+    async with _client(FakeService(), worker_pool=pool) as client:
+        response = await client.get("/api/snapshot")
+        assert response.status_code == 503
+        release.set()
+        await running
+        await queued
+
+
+@pytest.mark.anyio
 async def test_worker_pool_cancellation_does_not_report_invalid_state() -> None:
     pool = DiagnosticWorkerPool(max_workers=1)
     started = threading.Event()
@@ -290,3 +342,87 @@ async def test_app_lifespan_shuts_down_worker_pool() -> None:
     pool.shutdown()
     with pytest.raises(RuntimeError, match="closed"):
         await pool.run(lambda: None)
+
+
+@pytest.mark.anyio
+async def test_shutdown_closes_admission_cancels_queue_and_has_bounded_wait() -> None:
+    pool = DiagnosticWorkerPool(
+        max_workers=1,
+        max_pending_jobs=1,
+        shutdown_timeout_seconds=0.02,
+    )
+    started = threading.Event()
+    release = threading.Event()
+    running = asyncio.create_task(pool.run(lambda: (started.set(), release.wait(timeout=1))))
+    while not started.is_set():
+        await asyncio.sleep(0)
+    queued = asyncio.create_task(pool.run(lambda: None))
+    await asyncio.sleep(0)
+
+    before = asyncio.get_running_loop().time()
+    pool.shutdown()
+    elapsed = asyncio.get_running_loop().time() - before
+
+    assert elapsed < 0.2
+    async with asyncio.timeout(0.2):
+        with pytest.raises(WorkerPoolClosed):
+            await queued
+    with pytest.raises(WorkerPoolClosed):
+        await pool.run(lambda: None)
+    release.set()
+    await running
+
+
+@pytest.mark.anyio
+async def test_shutdown_admission_race_never_orphans_submission() -> None:
+    pool = DiagnosticWorkerPool(max_workers=1, max_pending_jobs=1)
+    shutdown_started = threading.Event()
+
+    def shut_down() -> None:
+        shutdown_started.set()
+        pool.shutdown()
+
+    shutdown_thread = threading.Thread(target=shut_down)
+    shutdown_thread.start()
+    while not shutdown_started.is_set():
+        await asyncio.sleep(0)
+
+    async with asyncio.timeout(0.2):
+        with pytest.raises(WorkerPoolClosed):
+            await pool.run(lambda: None)
+    shutdown_thread.join(timeout=0.2)
+    assert shutdown_thread.is_alive() is False
+
+
+@pytest.mark.anyio
+async def test_shutdown_cancels_job_dequeued_before_close_transition() -> None:
+    pool = DiagnosticWorkerPool(max_workers=1, max_pending_jobs=1)
+    result: WorkerFuture[object] = WorkerFuture()
+    with pool._state_lock:
+        pool._ensure_started_locked()
+        pool._jobs.put_nowait((lambda: pytest.fail("closed job must not run"), result))
+        deadline = time.monotonic() + 0.2
+        while pool._jobs.qsize() != 0 and time.monotonic() < deadline:
+            time.sleep(0.001)
+        assert pool._jobs.qsize() == 0
+        pool.closed = True
+        pool._jobs.put_nowait(None)
+
+    async with asyncio.timeout(0.2):
+        while not result.cancelled():
+            await asyncio.sleep(0.001)
+    for thread in pool._threads:
+        thread.join(timeout=0.2)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"max_workers": 0},
+        {"max_pending_jobs": 0},
+        {"shutdown_timeout_seconds": -1},
+    ],
+)
+def test_worker_pool_rejects_invalid_limits(kwargs: dict[str, int]) -> None:
+    with pytest.raises(ValueError, match="worker limits"):
+        DiagnosticWorkerPool(**kwargs)
