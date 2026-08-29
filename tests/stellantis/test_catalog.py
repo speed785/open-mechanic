@@ -141,6 +141,27 @@ def test_rejects_unknown_provenance_classification(
         load_catalog("synthetic")
 
 
+@pytest.mark.parametrize(
+    ("evidence", "applicability"),
+    [
+        ("vehicle_fixture", "community_unverified"),
+        ("community_reference", "exact_model_year"),
+    ],
+)
+def test_rejects_contradictory_provenance_classification(
+    monkeypatch: pytest.MonkeyPatch,
+    evidence: str,
+    applicability: str,
+) -> None:
+    data = _valid_catalog_data()
+    data["modules"][0]["source"]["evidence"] = evidence
+    data["modules"][0]["source"]["applicability"] = applicability
+    _install_catalog(monkeypatch, data)
+
+    with pytest.raises(CatalogValidationError, match="provenance"):
+        load_catalog("synthetic")
+
+
 def test_catalog_exposes_only_immutable_scanner_inputs(monkeypatch: pytest.MonkeyPatch) -> None:
     _install_catalog(monkeypatch, _valid_catalog_data())
 
@@ -224,7 +245,21 @@ def test_rejects_missing_provenance(
         load_catalog("synthetic")
 
 
-@pytest.mark.parametrize("url", ["https://", "https://[broken"])
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://",
+        "https:// ",
+        "https://exa mple.com",
+        "https://.",
+        "https://example..com",
+        "https://-example.com",
+        "https://example-.com",
+        "https://999.1.1.1",
+        "https://[2001:db8:::1]",
+        "https://[broken]",
+    ],
+)
 def test_rejects_provenance_url_without_valid_network_location(
     monkeypatch: pytest.MonkeyPatch,
     url: str,
@@ -235,6 +270,25 @@ def test_rejects_provenance_url_without_valid_network_location(
 
     with pytest.raises(CatalogValidationError, match="provenance"):
         load_catalog("synthetic")
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://example.com/protocol",
+        "https://192.0.2.1/protocol",
+        "https://[2001:db8::1]/protocol",
+    ],
+)
+def test_accepts_provenance_url_with_valid_dns_or_ip_host(
+    monkeypatch: pytest.MonkeyPatch,
+    url: str,
+) -> None:
+    data = _valid_catalog_data()
+    data["modules"][0]["source"]["url"] = url
+    _install_catalog(monkeypatch, data)
+
+    assert load_catalog("synthetic").modules[0].source.url == url
 
 
 @pytest.mark.parametrize(

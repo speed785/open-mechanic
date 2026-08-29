@@ -8,15 +8,22 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from importlib import resources
+from ipaddress import ip_address
 from types import MappingProxyType
 from typing import cast
 from urllib.parse import urlsplit
 
 _CATALOG_NAME = re.compile(r"[a-z0-9_]+")
 _HEX_VALUE = re.compile(r"0x[0-9A-Fa-f]+")
+_DNS_LABEL = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?")
+_IPV4_CANDIDATE = re.compile(r"[0-9.]+")
 _SAFE_SERVICES = frozenset({0x19, 0x22, 0x3E})
-_EVIDENCE_VALUES = frozenset({"vehicle_fixture", "community_reference"})
-_APPLICABILITY_VALUES = frozenset({"exact_model_year", "community_unverified"})
+_PROVENANCE_CLASSIFICATIONS = frozenset(
+    {
+        ("vehicle_fixture", "exact_model_year"),
+        ("community_reference", "community_unverified"),
+    }
+)
 
 
 class CatalogValidationError(ValueError):
@@ -122,13 +129,29 @@ def _finite_number(value: object, field_name: str) -> float:
     return parsed
 
 
+def _is_valid_network_host(hostname: str) -> bool:
+    try:
+        ip_address(hostname)
+    except ValueError:
+        if ":" in hostname or _IPV4_CANDIDATE.fullmatch(hostname) is not None:
+            return False
+        return len(hostname) <= 253 and all(
+            _DNS_LABEL.fullmatch(label) is not None for label in hostname.split(".")
+        )
+    return True
+
+
 def _is_https_url_with_network_location(value: str) -> bool:
     try:
         parsed = urlsplit(value)
         _port = parsed.port
     except ValueError:
         return False
-    return parsed.scheme == "https" and parsed.hostname is not None
+    return (
+        parsed.scheme == "https"
+        and parsed.hostname is not None
+        and _is_valid_network_host(parsed.hostname)
+    )
 
 
 def _parse_source(value: object) -> Provenance:
@@ -146,9 +169,8 @@ def _parse_source(value: object) -> Provenance:
         raise CatalogValidationError("provenance requires a document and HTTPS URL")
     if (
         not isinstance(evidence, str)
-        or evidence not in _EVIDENCE_VALUES
         or not isinstance(applicability, str)
-        or applicability not in _APPLICABILITY_VALUES
+        or (evidence, applicability) not in _PROVENANCE_CLASSIFICATIONS
     ):
         raise CatalogValidationError(
             "provenance has an unsupported evidence or applicability value"
