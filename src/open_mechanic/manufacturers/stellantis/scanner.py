@@ -83,10 +83,23 @@ class StellantisScanner:
             return tuple(self._not_cataloged_value(module, group) for module in self._catalog.modules)
 
         values: list[LiveValue] = []
+        blocked_modules: dict[str, str] = {}
         try:
             self._transport.open()
             for module, did in requested:
-                value = self._read_did(module, did)
+                blocked_error = blocked_modules.get(module.key)
+                if blocked_error is not None:
+                    value = self._unavailable_value(
+                        module,
+                        did,
+                        datetime.now(UTC),
+                        ModuleState.GATEWAY_BLOCKED,
+                        blocked_error,
+                    )
+                else:
+                    value = self._read_did(module, did)
+                    if value.state is ModuleState.GATEWAY_BLOCKED:
+                        blocked_modules[module.key] = value.error or "security gateway denied read"
                 values.append(self._with_cruise_event_marker(value) if group == "cruise" else value)
         finally:
             self._transport.close()
@@ -102,7 +115,7 @@ class StellantisScanner:
         except ELM327Error as error:
             return self._scan_result(module, ModuleState.NEGATIVE_RESPONSE, error=str(error))
 
-        state, response_error = self._response_state(payload)
+        state, response_error = self._response_state(payload, expected_service=0x19)
         if state is not ModuleState.RESPONDED:
             return self._scan_result(module, state, error=response_error)
         assert payload is not None
@@ -129,7 +142,7 @@ class StellantisScanner:
                 module, did, timestamp, ModuleState.NEGATIVE_RESPONSE, str(error)
             )
 
-        state, response_error = self._response_state(payload)
+        state, response_error = self._response_state(payload, expected_service=0x22)
         if state is not ModuleState.RESPONDED:
             return self._unavailable_value(module, did, timestamp, state, response_error)
         assert payload is not None
@@ -161,7 +174,9 @@ class StellantisScanner:
                 yield reply.responder_id, reply.payload
 
     @staticmethod
-    def _response_state(payload: bytes | None) -> tuple[ModuleState, str | None]:
+    def _response_state(
+        payload: bytes | None, *, expected_service: int
+    ) -> tuple[ModuleState, str | None]:
         if payload is None:
             return ModuleState.UNSUPPORTED, "no response"
         if payload[:1] != b"\x7f":
@@ -170,6 +185,13 @@ class StellantisScanner:
             response = parse_negative_response(payload)
         except UDSProtocolError as error:
             return ModuleState.NEGATIVE_RESPONSE, str(error)
+        if response.service != expected_service:
+            return (
+                ModuleState.NEGATIVE_RESPONSE,
+                "negative response service mismatch: "
+                f"expected 0x{expected_service:02X}, got 0x{response.service:02X} "
+                f"({response.meaning}, NRC 0x{response.code:02X})",
+            )
         state = ModuleState.GATEWAY_BLOCKED if response.code == 0x33 else ModuleState.NEGATIVE_RESPONSE
         return state, f"{response.meaning} (NRC 0x{response.code:02X})"
 

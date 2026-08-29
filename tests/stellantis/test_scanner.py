@@ -140,6 +140,37 @@ def test_security_denial_is_reported_without_an_unlock_request() -> None:
     assert transport.opened == transport.closed == 1
 
 
+def test_gateway_denial_stops_the_remaining_cataloged_dids_for_that_module() -> None:
+    transport = FakeTransport({0x600: deque([bytes.fromhex("7F2233"), bytes.fromhex("62123550")])})
+    catalog = _catalog(
+        dids=(
+            _did(0x1234, "cruise_state", unit=None, enum_map={1: "engaged"}),
+            _did(0x1235, "wheel_speed"),
+        )
+    )
+
+    values = StellantisScanner(transport, catalog).read_group("cruise")
+
+    assert [value.state for value in values] == [
+        ModuleState.GATEWAY_BLOCKED,
+        ModuleState.GATEWAY_BLOCKED,
+    ]
+    assert values[1].fresh is False
+    assert "securityAccessDenied" in (values[1].error or "")
+    assert [request.payload for request in transport.requests] == [bytes.fromhex("221234")]
+
+
+def test_mismatched_negative_response_service_is_malformed_not_gateway_blocked() -> None:
+    transport = FakeTransport({0x600: bytes.fromhex("7F2733")})
+    catalog = _catalog(dids=(_did(0x1234, "wheel_speed"),))
+
+    value = StellantisScanner(transport, catalog).read_group("cruise")[0]
+
+    assert value.state is ModuleState.NEGATIVE_RESPONSE
+    assert "expected 0x22" in (value.error or "")
+    assert "got 0x27" in (value.error or "")
+
+
 def test_read_group_decodes_known_enum_and_retains_unknown_raw_value() -> None:
     transport = FakeTransport({0x600: bytes.fromhex("62123402")})
     catalog = _catalog(
