@@ -1,6 +1,8 @@
 import pytest
 
 from open_mechanic.protocols.requests import (
+    DiagnosticProtocol,
+    DiagnosticRequest,
     UnsafeDiagnosticRequest,
     build_obd_request,
     build_uds_request,
@@ -36,3 +38,30 @@ def test_read_data_identifier_requires_catalog_approval() -> None:
         cataloged_did=True,
     )
     assert request.payload == bytes.fromhex("22F190")
+
+
+def test_read_dtc_information_is_allowed() -> None:
+    request = build_uds_request(0x19, b"", tx_id=0x7E0, rx_id=0x7E8)
+    assert request.payload == bytes.fromhex("19")
+
+
+@pytest.mark.parametrize("payload", [b"\x00", b"\x80"])
+def test_tester_present_allows_bounded_subfunctions(payload: bytes) -> None:
+    request = build_uds_request(0x3E, payload, tx_id=0x7E0, rx_id=0x7E8)
+    assert request.payload == bytes([0x3E]) + payload
+
+
+@pytest.mark.parametrize("payload", [b"", b"\x01", b"\x00\x00", b"\x80\x00"])
+def test_tester_present_rejects_malformed_or_unbounded_payload(payload: bytes) -> None:
+    with pytest.raises(UnsafeDiagnosticRequest):
+        build_uds_request(0x3E, payload, tx_id=0x7E0, rx_id=0x7E8)
+
+
+def test_direct_construction_rejects_unknown_protocol() -> None:
+    with pytest.raises(UnsafeDiagnosticRequest):
+        DiagnosticRequest("uds", 0x19, b"", 0x7E0, 0x7E8)  # type: ignore[arg-type]
+
+
+def test_direct_construction_validates_protocol_allowlist() -> None:
+    with pytest.raises(UnsafeDiagnosticRequest):
+        DiagnosticRequest(DiagnosticProtocol.OBD, 0x22, b"", 0x7DF, 0x7E8)

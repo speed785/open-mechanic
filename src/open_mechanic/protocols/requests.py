@@ -3,6 +3,7 @@ from enum import Enum
 
 READ_ONLY_OBD_MODES = frozenset({0x01, 0x02, 0x03, 0x07, 0x09, 0x0A})
 READ_ONLY_UDS_SERVICES = frozenset({0x19, 0x22, 0x3E})
+TESTER_PRESENT_SUBFUNCTIONS = frozenset({b"\x00", b"\x80"})
 
 
 class UnsafeDiagnosticRequest(ValueError):
@@ -24,6 +25,8 @@ class DiagnosticRequest:
     cataloged_did: bool = False
 
     def __post_init__(self) -> None:
+        if not isinstance(self.protocol, DiagnosticProtocol):
+            raise UnsafeDiagnosticRequest("unknown diagnostic protocol")
         allowed = (
             READ_ONLY_OBD_MODES
             if self.protocol is DiagnosticProtocol.OBD
@@ -37,6 +40,12 @@ class DiagnosticRequest:
             and not self.cataloged_did
         ):
             raise UnsafeDiagnosticRequest("UDS 0x22 requires a cataloged DID")
+        if (
+            self.protocol is DiagnosticProtocol.UDS
+            and self.service == 0x3E
+            and self.parameters not in TESTER_PRESENT_SUBFUNCTIONS
+        ):
+            raise UnsafeDiagnosticRequest("UDS 0x3E requires an allowed subfunction")
 
     @property
     def payload(self) -> bytes:
