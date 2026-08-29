@@ -1,0 +1,127 @@
+{
+  "key": "wrangler_jl_4xe_2024",
+  "name": "2024 Jeep Wrangler JL 4xe",
+  "model_year": 2024,
+  "modules": [
+    {
+      "key": "powertrain",
+      "name": "Powertrain Control Module",
+      "role": "powertrain",
+      "tx_id": "0x7E0",
+      "rx_id": "0x7E8",
+      "services": ["0x19"],
+      "dids": [],
+      "source": {
+        "document": "OBDb Jeep Wrangler 4xe 2024 command support fixture @ 2160899a",
+        "url": "https://github.com/OBDb/jeep-Wrangler-4xe/blob/2160899a65432a7b909634f6ebf885eb96e4b930/tests/test_cases/2024/command_support.yaml",
+        "evidence": "vehicle_fixture",
+        "applicability": "exact_model_year"
+      }
+    },
+    {
+      "key": "hybrid_control",
+      "name": "Hybrid Control Processor",
+      "role": "hybrid",
+      "tx_id": "0x7E2",
+      "rx_id": "0x7EA",
+      "services": ["0x19"],
+      "dids": [],
+      "source": {
+        "document": "OBDb Jeep Wrangler 4xe 2024 command support fixture @ 2160899a",
+        "url": "https://github.com/OBDb/jeep-Wrangler-4xe/blob/2160899a65432a7b909634f6ebf885eb96e4b930/tests/test_cases/2024/command_support.yaml",
+        "evidence": "vehicle_fixture",
+        "applicability": "exact_model_year"
+      }
+    },
+    {
+      "key": "transmission",
+      "name": "Transmission Control Module",
+      "role": "transmission",
+      "tx_id": "0x7E1",
+      "rx_id": "0x7E9",
+      "services": ["0x19"],
+      "dids": [],
+      "source": {
+        "document": "OBDb Jeep Wrangler 4xe 2024 command support fixture @ 2160899a",
+        "url": "https://github.com/OBDb/jeep-Wrangler-4xe/blob/2160899a65432a7b909634f6ebf885eb96e4b930/tests/test_cases/2024/command_support.yaml",
+        "evidence": "vehicle_fixture",
+        "applicability": "exact_model_year"
+      }
+    },
+    {
+      "key": "abs_esc",
+      "name": "Anti-lock Brake and Electronic Stability Control Module",
+      "role": "abs_esc",
+      "tx_id": "0x747",
+      "rx_id": "0x4C7",
+      "services": ["0x19"],
+      "dids": [],
+      "source": {
+        "document": "FCA CAN Bus and Message Reference - public Jeep UDS module table",
+        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html",
+        "evidence": "community_reference",
+        "applicability": "community_unverified"
+      }
+    },
+    {
+      "key": "electric_power_steering",
+      "name": "Electric Power Steering Module",
+      "role": "steering",
+      "tx_id": "0x762",
+      "rx_id": "0x4E2",
+      "services": ["0x19"],
+      "dids": [],
+      "source": {
+        "document": "FCA CAN Bus and Message Reference - public Jeep UDS module table",
+        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html",
+        "evidence": "community_reference",
+        "applicability": "community_unverified"
+      }
+    },
+    {
+      "key": "body_control",
+      "name": "Body Control Module",
+      "role": "body_gateway",
+      "tx_id": "0x620",
+      "rx_id": "0x504",
+      "services": ["0x19"],
+      "dids": [],
+      "source": {
+        "document": "FCA CAN Bus and Message Reference - public Jeep UDS module table",
+        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html",
+        "evidence": "community_reference",
+        "applicability": "community_unverified"
+      }
+    },
+    {
+      "key": "instrument_cluster",
+      "name": "Instrument Panel Cluster Module",
+      "role": "cluster",
+      "tx_id": "0x742",
+      "rx_id": "0x4C2",
+      "services": ["0x19"],
+      "dids": [],
+      "source": {
+        "document": "FCA CAN Bus and Message Reference - public Jeep UDS module table",
+        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html",
+        "evidence": "community_reference",
+        "applicability": "community_unverified"
+      }
+    },
+    {
+      "key": "adaptive_cruise",
+      "name": "Adaptive Cruise Control Module",
+      "role": "adas",
+      "tx_id": "0x753",
+      "rx_id": "0x4D3",
+      "services": ["0x19"],
+      "dids": [],
+      "source": {
+        "document": "FCA CAN Bus and Message Reference - public Jeep UDS module table",
+        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html",
+        "evidence": "community_reference",
+        "applicability": "community_unverified"
+      }
+    }
+  ]
+}

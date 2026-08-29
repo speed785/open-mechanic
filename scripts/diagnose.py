@@ -7,7 +7,7 @@ runs the full AI diagnostic engine, and displays a rich formatted result.
 Usage:
     python scripts/diagnose.py --vehicle "2018 Ford F-150" --mileage 85000
     python scripts/diagnose.py --vehicle "2018 Ford F-150" --mileage 85000 --protocol 6
-    python scripts/diagnose.py --vehicle "2018 Ford F-150" --mileage 85000 --no-cache
+    python scripts/diagnose.py --vehicle "2018 Ford F-150" --mileage 85000 --share-with-ai
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ class _Args:
     port: str | None
     protocol: str | None
     model: str | None
-    no_cache: bool
+    share_with_ai: bool
 
 
 logging.getLogger("obd").setLevel(logging.CRITICAL)
@@ -155,9 +155,9 @@ def _parse_args() -> _Args:
         help="AI model override (default: from ANTHROPIC_MODEL env)",
     )
     _ = parser.add_argument(
-        "--no-cache",
+        "--share-with-ai",
         action="store_true",
-        help="Bypass the 24h result cache",
+        help="Authorize sharing vehicle details, DTCs, and sensor readings for this request",
     )
     parsed = vars(parser.parse_args())
     return _Args(
@@ -167,7 +167,7 @@ def _parse_args() -> _Args:
         port=_require_optional_str(parsed.get("port"), "port"),
         protocol=_require_optional_str(parsed.get("protocol"), "protocol"),
         model=_require_optional_str(parsed.get("model"), "model"),
-        no_cache=_require_bool(parsed.get("no_cache"), "no_cache"),
+        share_with_ai=_require_bool(parsed.get("share_with_ai"), "share_with_ai"),
     )
 
 
@@ -336,6 +336,14 @@ def main() -> int:  # noqa: PLR0911
     vehicle = _build_vehicle(year, make, model_name, args.mileage, args.vin)
     vehicle_str = f"{year} {make} {model_name}"
 
+    if not args.share_with_ai:
+        console.print(
+            "[bold yellow]AI sharing not authorized.[/bold yellow] "
+            "This command would share vehicle details, DTCs, and sensor readings. "
+            "Re-run with [bold]--share-with-ai[/bold] to authorize this request."
+        )
+        return 1
+
     console.print(f"[bold]Vehicle[/bold]  {vehicle_str}  •  {args.mileage:,} miles")
     if args.vin:
         console.print(f"[bold]VIN[/bold]      [dim]{args.vin}[/dim]")
@@ -411,7 +419,12 @@ def main() -> int:  # noqa: PLR0911
             transient=True,
         ) as progress:
             _ = progress.add_task("Analyzing with AI...", total=None)
-            result = engine.diagnose(vehicle, dtcs, snapshot, bypass_cache=args.no_cache)
+            result = engine.diagnose(
+                vehicle,
+                dtcs,
+                snapshot,
+                external_sharing_authorized=args.share_with_ai,
+            )
 
     except ValueError as exc:
         console.print(

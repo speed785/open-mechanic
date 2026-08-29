@@ -1,216 +1,78 @@
 # AGENTS.md — open-mechanic
 
-> Read this first. Authoritative guide for AI agents working on this codebase.
+Authoritative contributor rules for this repository.
 
----
+## Purpose and defaults
 
-## Project Overview
+open-mechanic provides read-only, local-first OBD-II diagnostics. **No diagnostic history is saved by default.**
+Normal CLI/API scan paths must not create profiles,
+session logs, database rows, result caches, telemetry, or AI requests.
 
-**open-mechanic** is an open-source, AI-powered OBD-II car diagnostics platform. It reads live sensor data and fault codes from a vehicle via a USB OBD-II adapter, feeds that data to an AI model of your choice with vehicle context, and returns plain-English diagnosis, severity ratings, repair steps, and cost estimates. Target users are car owners who want real diagnostic visibility without paying dealer fees.
-
----
-
-## Current Build Status
-
-| Phase | Status | Description |
-|-------|--------|-------------|
-| Phase 1 — Foundation | ✅ COMPLETE | OBD connection, sensor polling, DTC reading, SQLite logging |
-| Phase 2 — AI Diagnostics | ✅ COMPLETE | Claude API integration, JSON output, 24h cache, disclaimer |
-| Phase 3 — Interface | PENDING | CLI, FastAPI, React dashboard |
-| Phase 4 — Community | FUTURE | Public release, community DTC DB |
-
-Phase 1 and Phase 2 are fully implemented and tested on a real vehicle (2026-03-18).
-Confirmed working: ISO 15765-4 CAN 11/500 protocol, OBDLink EX on `/dev/ttyUSB0` at 115200 baud.
-
----
-
-## Repository Structure
-
-```
-open-mechanic/
-├── README.md
-├── CONTRIBUTING.md
-├── AGENTS.md
-├── LICENSE                        (MIT)
-├── pyproject.toml
-├── .env.example
-├── .gitignore
-│
-├── src/
-│   └── open_mechanic/             (package name: open_mechanic, underscore)
-│       ├── __init__.py
-│       ├── connection.py          OBD-II connection management
-│       ├── reader.py              Live sensor data polling
-│       ├── dtc.py                 DTC code reading + decoding
-│       ├── ai/
-│       │   ├── __init__.py
-│       │   ├── diagnose.py        Claude API integration
-│       │   └── prompts.py         Prompt templates
-│       ├── api/
-│       │   ├── __init__.py
-│       │   └── routes.py          FastAPI routes (Phase 3)
-│       └── db/
-│           ├── __init__.py
-│           └── models.py          SQLAlchemy models
-│
-├── scripts/
-│   ├── test_connection.py         Standalone adapter test (no package import needed)
-│   └── seed_dtc_db.py             Populate local DTC database
-│
-├── data/
-│   └── dtc_codes.json             Offline DTC reference database (522 codes)
-│
-├── tests/
-│
-├── docs/
-│   ├── SETUP_LINUX.md
-│   ├── SETUP_MACOS.md
-│   └── SETUP_WINDOWS.md
-│
-└── .github/
-    ├── workflows/ci.yml
-    └── ISSUE_TEMPLATE/
-```
-
----
+OBDLink EX is the only supported hardware for the enhanced **2024 Jeep Wrangler JL
+4xe** path. It is fixed to 115200 baud and protocol 6 (ISO 15765-4 CAN 11-bit/500
+kbit).
 
 ## Architecture
 
-Data flows through the system in this order:
+- `protocols/` validates requests, performs bounded serial exchange, and parses frames.
+- `manufacturers/stellantis/` loads provenance-backed catalogs and returns immutable
+  per-module results.
+- `api/` exposes dependency-injected read-only endpoints.
+- `ai/diagnose.py` requires explicit external sharing and does not cache.
 
-```
-OBD-II Adapter (USB)
-    ↓
-connection.py — OBDConnection class
-    Manages serial port, auto-detection, reconnect backoff
-    ↓
-reader.py — SensorPoller          dtc.py — DTCReader
-    Live sensor snapshots              DTC code reading + decoding
-    ↓                                  ↓
-db/models.py — SQLAlchemy
-    VehicleProfile, DiagnosticSession, SensorReading, DTCRecord, DiagnosisResult
-    ↓
-ai/prompts.py — format_diagnostic_prompt()
-    Assembles vehicle context + DTCs + sensor snapshot into Claude prompt
-    ↓
-ai/diagnose.py — DiagnosticEngine
-    Calls Claude API, parses JSON response, injects disclaimer, caches result
-    ↓
-Output: DiagnosisResult dataclass
-    {severity, summary, likely_causes, repair_steps, estimated_cost_usd, diy_feasible, ...}
-```
+Legacy storage models remain for compatibility; normal diagnostic flows do not call
+them.
 
----
+## Non-negotiable safety boundary
 
-## Key Files and Their Roles
+Allowed requests are OBD-II `01`, `02`, `03`, `07`, `09`, `0A`; UDS `0x19`; UDS
+`0x22` only for cataloged DIDs; and bounded UDS `0x3E`. Reject arbitrary command text,
+unlisted addresses/DIDs, invalid subfunctions, protocol changes, and baud-rate changes
+before serial I/O. Never add address sweeps, write services, DTC clear, security access,
+actuator tests, coding, flashing, or raw-command escape hatches to this feature.
 
-| File | Role |
-|------|------|
-| `src/open_mechanic/connection.py` | OBD connection management, port auto-detection, reconnect logic |
-| `src/open_mechanic/reader.py` | Live sensor polling, `SensorPoller` class, `get_snapshot()` |
-| `src/open_mechanic/dtc.py` | DTC reading, decoding from `data/dtc_codes.json`, clear gate |
-| `src/open_mechanic/db/models.py` | SQLAlchemy models, `init_db()`, `get_session()` |
-| `src/open_mechanic/ai/prompts.py` | Prompt templates, `format_diagnostic_prompt()` |
-| `src/open_mechanic/ai/diagnose.py` | Claude API client, JSON parsing, 24h cache, disclaimer injection |
-| `data/dtc_codes.json` | Offline DTC reference: `{code, description, severity, category}` |
-| `scripts/test_connection.py` | Standalone adapter test, uses `python-obd` directly (no package import) |
+AutoAuth and an SGW bypass cable are not required or claimed for the supported
+public/read-only path. A gateway denial is a structured result, not permission to
+bypass it.
 
----
+## Catalog and result integrity
 
-## Conventions
+Every real address, DID, scaling rule, enum, and meaning needs a reviewable public
+source. Preserve provenance and applicability in output. `exact_model_year` and
+`community_unverified` are not equivalent. Unknown values remain unknown. The current
+catalog intentionally has no proprietary cruise DIDs; the cruise group reports
+unsupported/not-cataloged without sending guessed reads.
 
-- **Package name**: `open_mechanic` (underscore, not hyphen)
-- **Source layout**: `src/open_mechanic/` (src layout, not flat)
-- **Python**: 3.11+ minimum
-- **Type hints**: everywhere, mypy strict (`--ignore-missing-imports` for now)
-- **Data structures**: dataclasses (not dicts, not Pydantic models in core layer)
-- **Linting**: ruff (`ruff check` + `ruff format`)
-- **Tests**: pytest
-- **AI model**: `claude-sonnet-4-5` (configurable via `ANTHROPIC_MODEL` env var)
-- **Database**: SQLite dev path configurable via `DB_PATH` env var
+Preserve successful results when another module times out, rejects a request, returns
+malformed data, or is unavailable. Commands are finite: timeout and interval are
+greater than zero and at most 10 seconds; samples are 1–60.
 
----
+## Privacy, AI, and safety
 
-## Cross-Platform Port Detection
+- Never persist diagnostic inputs/outputs in normal CLI/API flows.
+- Never log or commit a VIN, adapter serial, observed DTCs, raw frames, or live values.
+- Fixtures and docs use only invented, clearly labeled **synthetic** data.
+- Local scans never call AI.
+- Every CLI AI invocation requires `--share-with-ai`. Without it, the command displays
+  sharing categories and exits before adapter/AI access; it does not prompt.
+  Authorization is not retained and responses are not cached. The
+  API `cached` field is compatibility-only and always false.
+- Begin parked with the parking brake set and ignition in RUN. During any moving test,
+  a passenger or qualified technician operates the computer; never the driver.
 
-Hardware: OBDLink EX FORScan USB adapter (FTDI chip on all platforms).
+## Development
 
-| Platform | Default port | Port pattern | Driver needed |
-|----------|-------------|--------------|---------------|
-| Linux | `/dev/ttyUSB0` | `/dev/ttyUSB*` | None (built-in FTDI) |
-| macOS | `/dev/cu.usbserial-*` | `/dev/cu.usbserial-*`, `/dev/tty.usbserial-*` | FTDI VCP driver OR native macOS 12+ |
-| Windows | `COM3` (varies) | `COM*` | FTDI CDM driver |
-
-Use `platform.system()` which returns `"Linux"`, `"Darwin"` (macOS), or `"Windows"`.
-Use `glob.glob()` for macOS port scanning.
-`python-obd`'s `obd.OBD()` auto-detects on all platforms — `scan_ports()` is a fallback helper.
-On Windows, auto-detection is unreliable; recommend `OBD_PORT` env var override.
-
----
-
-## CRITICAL CONSTRAINTS
-
-Never violate these. They exist for safety and legal reasons.
-
-1. **DTC clear requires explicit confirmation.** `clear_dtcs()` MUST require `confirmed: bool = False` parameter. If called without `confirmed=True`, raise `DTCClearNotConfirmed`. No exceptions.
-
-2. **All AI diagnostic output MUST include the disclaimer.** Inject this into every `DiagnosisResult`: `"This diagnosis is informational only and does not constitute professional mechanical advice. Consult a qualified mechanic before making safety-critical repairs."` The `DiagnosticEngine` is responsible for always injecting this — never rely on callers to add it.
-
-3. **Never hardcode API keys.** Always read from env vars or `.env` via `python-dotenv`. The `ANTHROPIC_API_KEY` must never appear in source code.
-
-4. **Handle unsupported OBD PIDs gracefully.** Not all cars support all OBD-II commands. When a PID is unsupported, skip it silently and continue. Never crash on an unsupported command.
-
-5. **EV/Hybrid support is out of scope for Phase 1-2.** Don't add EV-specific logic. Document it as a future module if asked.
-
----
-
-## Running the Project
+Use Python 3.11+, strict typing, Ruff, pytest, immutable core models where practical,
+and 100% package line coverage. Write behavior tests first and observe RED. Never use
+live hardware in automated tests.
 
 ```bash
-git clone https://github.com/yourusername/open-mechanic
-cd open-mechanic
-pip install -e ".[dev]"
-
-cp .env.example .env
-# Edit .env: set ANTHROPIC_API_KEY
-
-python scripts/test_connection.py
-# If connection hangs, add: --protocol 6  (ISO 15765-4 CAN, most 2008+ cars)
-```
-
----
-
-## Running Tests
-
-```bash
+pip install -e ".[dev,api]"
+ruff format --check src tests scripts
+ruff check src tests scripts
+mypy src
 pytest tests/ -v
 ```
 
----
-
-## Environment Variables
-
-All configured in `.env` (copy from `.env.example`):
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | — | Claude API key |
-| `ANTHROPIC_MODEL` | No | `claude-sonnet-4-5` | Claude model to use |
-| `OBD_PORT` | No | platform default | Override OBD port (e.g. `COM3`, `/dev/ttyUSB0`) |
-| `OBD_BAUDRATE` | No | auto | Serial baudrate |
-| `OBD_PROTOCOL` | No | auto | OBD protocol number. Set `6` for ISO 15765-4 CAN 11/500 (most 2008+ cars). Skips slow auto-detection. |
-| `DB_PATH` | No | `data/sessions.db` | SQLite database path |
-
----
-
-## What NOT To Do
-
-- Do not clear DTCs without the `confirmed=True` gate
-- Do not add AI diagnostic output without the disclaimer
-- Do not commit `.env` files (they're in `.gitignore`)
-- Do not add Windows-only or macOS-only code without a Linux equivalent
-- Do not make OBD commands blocking without timeout handling
-- Do not import from `open_mechanic` in `scripts/test_connection.py` (it's a standalone script)
-- Do not add EV/Hybrid-specific logic in Phase 1-2
-- Do not use merge commits or rebase merges (squash-merge only repo)
-- Do not rely on OBD protocol auto-detection in production — always set OBD_PROTOCOL in .env
+Hardware acceptance requires separate explicit approval. Never copy its output into the
+repository or pull request.

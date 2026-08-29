@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Generator
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -15,6 +15,11 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 class Base(DeclarativeBase):
     pass
+
+
+def _utc_now() -> datetime:
+    """Return a naive UTC timestamp for the existing SQLite schema."""
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class VehicleProfile(Base):
@@ -28,7 +33,7 @@ class VehicleProfile(Base):
     model: Mapped[str]
     mileage: Mapped[int]
     vin: Mapped[str | None]
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(default=_utc_now)
 
 
 class DiagnosticSession(Base):
@@ -38,7 +43,7 @@ class DiagnosticSession(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicle_profiles.id"))
-    started_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    started_at: Mapped[datetime] = mapped_column(default=_utc_now)
     ended_at: Mapped[datetime | None]
     port_used: Mapped[str]
     protocol: Mapped[str | None]
@@ -51,7 +56,7 @@ class SensorReading(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("diagnostic_sessions.id"))
-    timestamp: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    timestamp: Mapped[datetime] = mapped_column(default=_utc_now)
     sensor_name: Mapped[str]
     value: Mapped[str]  # stored as string to accommodate all OBD-II value types
     unit: Mapped[str | None]
@@ -64,7 +69,7 @@ class DTCRecord(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("diagnostic_sessions.id"))
-    timestamp: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    timestamp: Mapped[datetime] = mapped_column(default=_utc_now)
     code: Mapped[str]
     description: Mapped[str | None]
     status: Mapped[str]  # "pending" or "confirmed"
@@ -79,7 +84,7 @@ class DiagnosisResult(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("diagnostic_sessions.id"))
-    timestamp: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    timestamp: Mapped[datetime] = mapped_column(default=_utc_now)
     severity: Mapped[str]
     summary: Mapped[str]
     raw_json: Mapped[str]  # full Claude JSON response as text

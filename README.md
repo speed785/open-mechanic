@@ -1,201 +1,118 @@
 # open-mechanic
 
-> Open-source AI-powered car diagnostics. Plug in an OBD-II USB adapter, read live sensor data and fault codes, get plain-English diagnosis and step-by-step repair guides — on Linux, macOS, or Windows.
+Open-source, local-first vehicle diagnostics for Linux, macOS, and Windows. Normal
+scans render data in the current process. **No diagnostic history is saved by default.**
+Nothing is sent to an AI provider without explicit per-request authorization.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![Phase 1+2: Complete](https://img.shields.io/badge/phase%201%2B2-complete-brightgreen.svg)]()
+## Hardware and supported vehicle
 
-**Live site:** https://speed785.github.io/open-mechanic/
+[OBDLink EX USB](https://www.obdlink.com/products/obdlink-ex/) is the **only required diagnostic hardware**
+for the enhanced Stellantis path. Generic ELM327 adapters may
+work with generic emissions OBD-II commands but are not supported for this path.
 
----
+The first enhanced catalog targets the **2024 Jeep Wrangler JL 4xe**, fixed at 115200
+baud and ISO 15765-4 CAN 11-bit/500 kbit (protocol 6). It is read-only and does not
+require or claim support for AutoAuth or an SGW bypass cable. Gateway denials are
+reported; the tool never unlocks or bypasses the gateway.
 
-## What It Does
+Catalog coverage is conservative:
 
-1. Plug an OBD-II USB adapter into your car's OBD-II port
-2. Connect the adapter to your computer via USB (Linux, macOS, or Windows)
-3. `open-mechanic` reads live sensor data + fault codes using `python-obd`
-4. Feeds that data to Claude with your vehicle's context
-5. Returns plain-English diagnosis, severity rating, repair steps, and estimated cost
+- Public exact-model-year evidence supports powertrain, hybrid-control, and
+  transmission addresses.
+- Other addresses are visibly labeled `community_unverified`.
+- No manufacturer-specific cruise DIDs have acceptable public verification yet. The
+  cruise view reports unsupported fields instead of guessing identifiers or values.
 
-**Target users**: Car owners who want real visibility into their vehicle without paying dealer diagnostic fees.
+## Install
 
----
-
-## Why open-mechanic?
-
-| Tool | Open Source | AI Diagnostics | Repair Guides | Linux | Self-Hostable |
-|------|-------------|----------------|---------------|-------|---------------|
-| Torque Pro | ❌ | ❌ | ❌ | ❌ | ❌ |
-| OBD Fusion | ❌ | ❌ | Partial | ❌ | ❌ |
-| Car Scanner | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **open-mechanic** | ✅ | ✅ | ✅ | ✅ | ✅ |
-
----
-
-## Hardware
-
-**Recommended: [OBDLink EX USB](https://www.obdlink.com/products/obdlink-ex/)** (~$35)
-
-- FTDI chip → works on Linux out of the box (`/dev/ttyUSB0`), macOS (`/dev/cu.usbserial-*`), and Windows (`COM3`) — see [platform setup docs](docs/)
-- Supports Ford MS-CAN + HS-CAN for deep Ford/Lincoln/Mercury/Mazda access
-- 20× faster throughput than generic ELM327 clones
-- Works as standard OBD-II adapter for **all 1996+ vehicles**
-
-Generic ELM327 USB adapters also work for standard OBD-II data.
+Python 3.11 or newer is required.
 
 ```bash
-# Confirm adapter is detected after plugging in:
-dmesg | grep ttyUSB
-# → FTDI USB Serial Device converter now attached to ttyUSB0
-
-# Add yourself to the dialout group if needed:
-sudo usermod -a -G dialout $USER
-```
-
----
-
-## Quick Start
-
-```bash
-# Clone and install
 git clone https://github.com/speed785/open-mechanic
 cd open-mechanic
 pip install -e ".[dev,api]"
+```
 
-# Set your AI API key
-cp .env.example .env
-# Edit .env and add: ANTHROPIC_API_KEY=your_key_here
+Linux users should complete the non-root serial permission steps in
+[docs/SETUP_LINUX.md](docs/SETUP_LINUX.md).
 
-# Test your OBD adapter (engine running, adapter plugged into OBD-II port)
-python scripts/test_connection.py
-# Tip: if connection hangs, your car likely uses CAN — add OBD_PROTOCOL=6 to .env
+## Parked read-only scan
 
-# Open the read-only tools menu
-open-mechanic
+Park safely, set the parking brake, and put the ignition in RUN with the engine off.
 
-# Or run a one-shot AI diagnosis
-python scripts/diagnose.py --vehicle "2018 Ford F-150" --mileage 85000 --protocol 6
+```bash
+open-mechanic stellantis-scan \
+  --vehicle wrangler_jl_4xe_2024 \
+  --port /dev/ttyUSB0 --protocol 6 --baudrate 115200
+```
 
-# Or run the local read-only API
+Timeouts, negative replies, gateway restrictions, unsupported modules, and unverified
+applicability remain structured partial errors. One unavailable module does not erase
+other module results.
+
+## Bounded cruise observation
+
+```bash
+open-mechanic stellantis-live \
+  --vehicle wrangler_jl_4xe_2024 --group cruise \
+  --samples 3 --interval 1 \
+  --port /dev/ttyUSB0 --protocol 6 --baudrate 115200
+```
+
+`--samples` is 1–60; `--interval` and `--timeout` are greater than zero and at most 10
+seconds. Do the parked scan first. During any later moving test, a passenger or qualified technician
+must operate the computer; the driver must never operate it.
+
+## Safety and privacy boundary
+
+The enhanced transport accepts only OBD-II services `01`, `02`, `03`, `07`, `09`, and
+`0A`; UDS ReadDTCInformation (`0x19`); cataloged ReadDataByIdentifier (`0x22`); and
+bounded TesterPresent (`0x3E`). It exposes no arbitrary command console, address sweep,
+security access, actuator command, coding, flashing, DTC clear, or gateway bypass.
+Disallowed requests are rejected before the serial port opens.
+
+Local scans create no profiles, JSONL logs, database rows, result caches, telemetry, or
+network calls. AI diagnosis is separate and optional. Every CLI AI invocation requires `--share-with-ai`.
+Without it, the command displays the categories that would be shared
+and exits before adapter or AI access. Consent lasts for one invocation, and AI
+responses are not cached.
+
+## Local API and AI
+
+```bash
 uvicorn open_mechanic.api:create_app --factory --reload
 ```
 
----
+Enhanced endpoints are:
 
-## AI Diagnostic Output
-
-```json
-{
-  "severity": "warning",
-  "summary": "Catalytic converter efficiency below threshold on bank 1",
-  "likely_causes": [
-    "Aged catalytic converter",
-    "Rich fuel mixture causing catalyst damage",
-    "Upstream O2 sensor fault skewing readings"
-  ],
-  "repair_steps": [
-    "Inspect upstream and downstream O2 sensors for correct waveform",
-    "Check for exhaust leaks before the catalytic converter",
-    "Test catalytic converter efficiency with a scan tool",
-    "Replace catalytic converter if efficiency confirmed below spec"
-  ],
-  "estimated_cost_usd": { "low": 150, "high": 1200 },
-  "diy_feasible": false,
-  "diy_difficulty": "hard",
-  "urgency": "soon"
-}
+```text
+GET /api/stellantis/wrangler_jl_4xe_2024/dtc
+GET /api/stellantis/wrangler_jl_4xe_2024/live/cruise?samples=3&interval=1
 ```
 
----
+See [docs/API.md](docs/API.md). AI is unnecessary for local scanning. One CLI AI
+request can be authorized with:
 
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Hardware | OBDLink EX USB adapter |
-| OBD Reading | `python-obd`, `pyserial` |
-| AI/LLM | Anthropic Claude via `ANTHROPIC_API_KEY` |
-| Backend | Python package + FastAPI read-only API |
-| Frontend | Vite/TypeScript static site now; dashboard planned for Phase 3 |
-| Database | SQLite → PostgreSQL |
-| CLI | Python + `rich` |
-| Hosting | GitHub Pages website now; Docker planned |
-| CI/CD | GitHub Actions |
-
----
-
-## Current vs Planned
-
-Available now:
-
-- Read-only CLI tools menu with vehicle profile, live sensors, DTCs, readiness, freeze-frame, and health snapshot views
-- Read-only FastAPI backend for vehicle profile, live sensors, DTCs, health snapshot, and diagnosis
-- One-shot AI diagnosis script backed by Anthropic Claude
-- SQLite data models and local JSON session logs
-- Vite/TypeScript public website
-
-Planned:
-
-- Interactive web dashboard and repair guide viewer
-- Docker/self-hosted deployment package
-- Additional AI provider backends beyond Anthropic
-
----
-
-## Roadmap
-
-### ✅ Phase 1 — Foundation *(Week 1–2)*
-OBD-II connection management · Live sensor polling · DTC fault code reading + decoding · SQLite session logging
-
-### ✅ Phase 2 — AI Diagnostics *(Week 3–4)*
-AI API integration · Structured JSON diagnostic output · Local DTC code cache
-
-### 📋 Phase 3 — Interface *(Month 2)*
-Rich CLI with color-coded severity · ✅ FastAPI REST backend foundation · React dashboard + repair guide viewer · Maintenance timeline tracker
-
-### 🌐 Phase 4 — Community *(Month 3–6)*
-Public open-source release · Community DTC database · Manufacturer-specific modules (Ford, VW, BMW) · Optional SaaS hosted tier
-
----
-
-## Current API Endpoints
-
-```
-GET  /api/health           — service liveness
-GET  /api/vehicle          — local vehicle profile
-GET  /api/live             — one-shot live sensor snapshot
-GET  /api/dtc              — current fault codes
-GET  /api/snapshot         — combined connection, sensor, and DTC snapshot
-POST /api/diagnose         — trigger AI diagnosis
+```bash
+python scripts/diagnose.py --vehicle "Synthetic Example Vehicle" \
+  --mileage 10000 --protocol 6 --share-with-ai
 ```
 
-See [docs/API.md](docs/API.md) for request/response contracts and planned dashboard endpoints.
+That vehicle is an invented synthetic example, not observed data. See
+[docs/AI_PROVIDERS.md](docs/AI_PROVIDERS.md) before sharing anything externally.
 
----
+## Development
 
-## OBD-II Coverage
+```bash
+ruff format --check src tests scripts
+ruff check src tests scripts
+mypy src
+pytest tests/ -v
+```
 
-**Standard OBD-II** (all 1996+ vehicles): DTC codes, RPM, coolant temp, O2 sensors, fuel trim, vehicle speed, emissions readiness monitors, MAF, throttle position, battery voltage.
+Never add a user's VIN, adapter serial number, observed DTCs, raw frames, or live values
+to fixtures, docs, issues, commits, or pull requests. Examples must be invented and
+labeled synthetic. Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-**Ford extended PIDs** *(future)*: Requires OBDLink EX + community-documented PIDs from FORScan forums. Covers transmission temp, TPMS, ABS, body modules.
-
-**EV/Hybrid note**: Hybrid and electric vehicles don't expose the same OBD-II data. Treated as a separate future module.
-
----
-
-## Contributing
-
-Contributions welcome — bug reports, DTC database additions, manufacturer PID documentation, and code all appreciated. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE)
-
----
-
-## ⚠️ Disclaimer
-
-All diagnostic output from open-mechanic is **informational only** and does not constitute professional mechanical advice. Always consult a qualified mechanic before making safety-critical repairs. The authors accept no liability for vehicle damage or personal injury resulting from use of this software.
+MIT licensed. Diagnostic output is informational, not professional mechanical advice.
+Consult a qualified mechanic before safety-critical repairs.

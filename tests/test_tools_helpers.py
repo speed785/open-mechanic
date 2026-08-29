@@ -12,6 +12,7 @@ from rich.console import Console
 from open_mechanic import tools
 from open_mechanic.dtc import DTCCode
 from open_mechanic.local_store import VehicleProfile
+from open_mechanic.protocols.elm327 import ELM327ConnectionError
 from open_mechanic.reader import SensorValue
 
 
@@ -103,7 +104,6 @@ def test_read_number_selection_handles_timeout_error(monkeypatch: pytest.MonkeyP
 def test_main_dispatches_profile_command(monkeypatch: pytest.MonkeyPatch) -> None:
     profile = VehicleProfile(2018, "Ford", "F-150")
     calls: list[object] = []
-    monkeypatch.setattr(tools, "ensure_local_dirs", lambda: None)
     monkeypatch.setattr(tools, "prompt_vehicle_profile", lambda console: profile)
     monkeypatch.setattr(tools, "show_profile", lambda console, profile=None: calls.append(profile))
 
@@ -112,7 +112,6 @@ def test_main_dispatches_profile_command(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 def test_main_dispatches_menu_and_direct_tool(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(tools, "ensure_local_dirs", lambda: None)
     monkeypatch.setattr(tools, "run_tools_menu", lambda args, console: 3)
     monkeypatch.setattr(tools, "run_direct_tool", lambda command, args, console: 4)
 
@@ -121,10 +120,256 @@ def test_main_dispatches_menu_and_direct_tool(monkeypatch: pytest.MonkeyPatch) -
 
 
 def test_main_tools_command_dispatches_menu(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(tools, "ensure_local_dirs", lambda: None)
     monkeypatch.setattr(tools, "run_tools_menu", lambda args, console: 6)
 
     assert tools.main(["tools"]) == 6
+
+
+def test_main_dispatches_bounded_stellantis_commands(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: list[argparse.Namespace] = []
+    monkeypatch.setattr(
+        tools, "run_stellantis_command", lambda args, console: captured.append(args) or 7
+    )
+
+    assert (
+        tools.main(
+            [
+                "stellantis-scan",
+                "--vehicle",
+                "wrangler_jl_4xe_2024",
+                "--port",
+                "/dev/test",
+            ]
+        )
+        == 7
+    )
+    assert (
+        tools.main(
+            [
+                "stellantis-live",
+                "--vehicle",
+                "wrangler_jl_4xe_2024",
+                "--group",
+                "cruise",
+                "--samples",
+                "2",
+                "--interval",
+                "0.2",
+            ]
+        )
+        == 7
+    )
+    assert captured[0].vehicle == "wrangler_jl_4xe_2024"
+    assert captured[1].samples == 2
+
+
+def test_stellantis_live_cli_requires_explicit_finite_samples() -> None:
+    with pytest.raises(SystemExit) as error:
+        tools.main(
+            [
+                "stellantis-live",
+                "--vehicle",
+                "wrangler_jl_4xe_2024",
+                "--group",
+                "cruise",
+            ]
+        )
+
+    assert error.value.code == 2
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        [
+            "stellantis-live",
+            "--vehicle",
+            "wrangler_jl_4xe_2024",
+            "--group",
+            "cruise",
+            "--samples",
+            "0",
+        ],
+        [
+            "stellantis-live",
+            "--vehicle",
+            "wrangler_jl_4xe_2024",
+            "--group",
+            "cruise",
+            "--samples",
+            "61",
+        ],
+        [
+            "stellantis-live",
+            "--vehicle",
+            "wrangler_jl_4xe_2024",
+            "--group",
+            "cruise",
+            "--samples",
+            "many",
+        ],
+        [
+            "stellantis-live",
+            "--vehicle",
+            "wrangler_jl_4xe_2024",
+            "--group",
+            "cruise",
+            "--samples",
+            "1",
+            "--interval",
+            "0",
+        ],
+        ["stellantis-scan", "--vehicle", "wrangler_jl_4xe_2024", "--timeout", "0"],
+        ["stellantis-scan", "--vehicle", "wrangler_jl_4xe_2024", "--timeout", "later"],
+        ["stellantis-scan", "--vehicle", "wrangler_jl_4xe_2024", "--protocol", "7"],
+        ["stellantis-scan", "--vehicle", "wrangler_jl_4xe_2024", "--baudrate", "9600"],
+    ],
+)
+def test_invalid_stellantis_cli_values_exit_concisely_before_hardware(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    arguments: list[str],
+) -> None:
+    monkeypatch.setattr(
+        tools,
+        "ELM327Transport",
+        lambda *args, **kwargs: pytest.fail("transport must not be constructed"),
+    )
+
+    with pytest.raises(SystemExit) as error:
+        tools.main(arguments)
+
+    assert error.value.code == 2
+    captured = capsys.readouterr()
+    assert "error:" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_stellantis_help_documents_fixed_protocol_and_baudrate(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    with pytest.raises(SystemExit) as error:
+        tools.main(["stellantis-scan", "--help"])
+
+    assert error.value.code == 0
+    output = capsys.readouterr().out
+    assert "ISO 15765-4 CAN 11/500; only 6 is accepted" in output
+    assert "OBDLink EX fixed rate; only 115200 is accepted" in output
+
+
+def test_stellantis_command_builds_catalog_scanner_and_dispatches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    catalog = object()
+    transport = object()
+    scanner = object()
+    monkeypatch.setattr(tools, "load_catalog", lambda name: catalog)
+    monkeypatch.setattr(
+        tools,
+        "ELM327Transport",
+        lambda port, timeout: transport if (port, timeout) == ("/dev/test", 2.0) else None,
+    )
+    monkeypatch.setattr(
+        tools, "StellantisScanner", lambda actual_transport, actual_catalog: scanner
+    )
+    monkeypatch.setattr(tools, "run_scan", lambda console, actual_scanner: 4)
+
+    result = tools.run_stellantis_command(
+        argparse.Namespace(
+            command="stellantis-scan",
+            vehicle="wrangler_jl_4xe_2024",
+            port="/dev/test",
+            timeout=2.0,
+        ),
+        Console(file=None),
+    )
+
+    assert result == 4
+
+
+def test_direct_stellantis_dispatch_rejects_nonfixed_settings_before_construction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        tools, "load_catalog", lambda name: pytest.fail("catalog must not be loaded")
+    )
+
+    with pytest.raises(ValueError, match="protocol"):
+        tools.run_stellantis_command(
+            argparse.Namespace(
+                command="stellantis-scan",
+                vehicle="wrangler_jl_4xe_2024",
+                port="/dev/test",
+                timeout=1.0,
+                protocol="7",
+                baudrate=115200,
+            ),
+            Console(file=None),
+        )
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"baudrate": 9600}, "baudrate"),
+        ({"timeout": 0.0}, "timeout"),
+        ({"samples": 0}, "samples"),
+        ({"interval": 0.0}, "interval"),
+    ],
+)
+def test_direct_stellantis_dispatch_validates_all_bounds_before_catalog(
+    monkeypatch: pytest.MonkeyPatch,
+    changes: dict[str, object],
+    message: str,
+) -> None:
+    monkeypatch.setattr(
+        tools, "load_catalog", lambda name: pytest.fail("catalog must not be loaded")
+    )
+    values: dict[str, object] = {
+        "command": "stellantis-live",
+        "vehicle": "wrangler_jl_4xe_2024",
+        "port": "/dev/test",
+        "timeout": 1.0,
+        "protocol": "6",
+        "baudrate": 115200,
+        "samples": 1,
+        "interval": 0.1,
+    }
+    values.update(changes)
+
+    with pytest.raises(ValueError, match=message):
+        tools.run_stellantis_command(argparse.Namespace(**values), Console(file=None))
+
+
+def test_stellantis_live_command_passes_finite_bounds_and_reports_permission_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(tools, "load_catalog", lambda name: object())
+    monkeypatch.setattr(tools, "ELM327Transport", lambda port, timeout: object())
+    monkeypatch.setattr(tools, "StellantisScanner", lambda transport, catalog: object())
+
+    def fail(*args: object, **kwargs: object) -> int:
+        assert kwargs["samples"] == 2
+        assert kwargs["interval"] == 0.2
+        raise ELM327ConnectionError("could not open /dev/test")
+
+    monkeypatch.setattr(tools, "run_live", fail)
+    console = Console(record=True)
+
+    result = tools.run_stellantis_command(
+        argparse.Namespace(
+            command="stellantis-live",
+            vehicle="wrangler_jl_4xe_2024",
+            port="/dev/test",
+            timeout=1.0,
+            samples=2,
+            interval=0.2,
+        ),
+        console,
+    )
+
+    assert result == 1
+    assert "dialout" in console.export_text()
 
 
 def test_run_tools_menu_handles_quit_profile_and_tool(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -133,7 +378,6 @@ def test_run_tools_menu_handles_quit_profile_and_tool(monkeypatch: pytest.Monkey
     args = argparse.Namespace()
     selections = iter([0, 1, 6])
     called: list[str] = []
-    monkeypatch.setattr(tools, "load_vehicle_profile", lambda: profile)
     monkeypatch.setattr(
         tools, "_select_menu_item", lambda console, profile, selected: next(selections)
     )
@@ -158,7 +402,6 @@ def test_run_tools_menu_prompts_for_missing_profile_and_returns_tool_status(
     console = Console(file=None)
     profile = VehicleProfile(2018, "Ford", "F-150")
     args = argparse.Namespace()
-    monkeypatch.setattr(tools, "load_vehicle_profile", lambda: None)
     monkeypatch.setattr(tools, "_select_menu_item", lambda console, profile, selected: 1)
     monkeypatch.setattr(tools, "prompt_vehicle_profile", lambda console: profile)
     monkeypatch.setattr(tools, "run_direct_tool", lambda *args, **kwargs: 9)
@@ -215,19 +458,16 @@ def test_select_from_list_tty_up_and_invalid_number_paths(
     assert tools._select_from_list(console, "Title", ["A", "B"]) == "A"
 
 
-def test_prompt_vehicle_profile_saves_profile(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_prompt_vehicle_profile_keeps_profile_in_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     console = Console(file=None)
-    saved: list[VehicleProfile] = []
     monkeypatch.setattr(tools.IntPrompt, "ask", lambda *args, **kwargs: 2018)
     monkeypatch.setattr(tools, "select_vehicle_make", lambda console: "Ford")
     answers = iter(["F-150", "85000"])
     monkeypatch.setattr(tools.Prompt, "ask", lambda *args, **kwargs: next(answers))
-    monkeypatch.setattr(tools, "save_vehicle_profile", saved.append)
 
     profile = tools.prompt_vehicle_profile(console)
 
     assert profile == VehicleProfile(2018, "Ford", "F-150", 85000)
-    assert saved == [profile]
 
 
 def test_select_vehicle_make_prompts_for_other(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -313,7 +553,6 @@ def test_read_key_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_show_profile_renders_missing_and_present_profile(monkeypatch: pytest.MonkeyPatch) -> None:
     console = Console(record=True)
-    monkeypatch.setattr(tools, "load_vehicle_profile", lambda: None)
 
     tools.show_profile(console)
     tools.show_profile(console, VehicleProfile(2018, "Ford", "F-150", 85000))
@@ -371,15 +610,16 @@ def test_run_direct_tool_dispatches_tool(
     args = argparse.Namespace(port=None, protocol=None, baudrate=115200, timeout=1, samples=1)
     calls: list[str] = []
     fake_connection = _FakeToolConnection()
-    monkeypatch.setattr(
-        tools, "load_vehicle_profile", lambda: VehicleProfile(2018, "Ford", "F-150")
-    )
     monkeypatch.setattr(tools, "OBDConnection", lambda **kwargs: fake_connection)
-    monkeypatch.setattr(tools, "SessionLog", _FakeSessionLog)
     monkeypatch.setattr(tools, "scan_ports", lambda: [])
     monkeypatch.setattr(tools, patched_name, lambda *args, **kwargs: calls.append(patched_name))
 
-    assert tools.run_direct_tool(tool_name, args, console) == 0
+    assert (
+        tools.run_direct_tool(
+            tool_name, args, console, profile=VehicleProfile(2018, "Ford", "F-150")
+        )
+        == 0
+    )
     assert calls == [patched_name]
     assert fake_connection.disconnected is True
 
@@ -387,26 +627,27 @@ def test_run_direct_tool_dispatches_tool(
 def test_run_direct_tool_handles_connection_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     console = Console(file=None)
     args = argparse.Namespace(port=None, protocol=None, baudrate=115200, timeout=1)
-    monkeypatch.setattr(
-        tools, "load_vehicle_profile", lambda: VehicleProfile(2018, "Ford", "F-150")
-    )
     monkeypatch.setattr(tools, "OBDConnection", lambda **kwargs: _FakeToolConnection(False))
     monkeypatch.setattr(tools, "scan_ports", lambda: [])
 
-    assert tools.run_direct_tool("dtcs", args, console) == 1
+    assert (
+        tools.run_direct_tool("dtcs", args, console, profile=VehicleProfile(2018, "Ford", "F-150"))
+        == 1
+    )
 
 
 def test_run_direct_tool_returns_error_for_unknown_tool(monkeypatch: pytest.MonkeyPatch) -> None:
     console = Console(file=None)
     args = argparse.Namespace(port=None, protocol=None, baudrate=115200, timeout=1)
-    monkeypatch.setattr(
-        tools, "load_vehicle_profile", lambda: VehicleProfile(2018, "Ford", "F-150")
-    )
     monkeypatch.setattr(tools, "OBDConnection", lambda **kwargs: _FakeToolConnection(True))
-    monkeypatch.setattr(tools, "SessionLog", _FakeSessionLog)
     monkeypatch.setattr(tools, "scan_ports", lambda: [])
 
-    assert tools.run_direct_tool("bad-tool", args, console) == 2
+    assert (
+        tools.run_direct_tool(
+            "bad-tool", args, console, profile=VehicleProfile(2018, "Ford", "F-150")
+        )
+        == 2
+    )
 
 
 def test_run_direct_tool_prompts_for_missing_profile(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -414,10 +655,8 @@ def test_run_direct_tool_prompts_for_missing_profile(monkeypatch: pytest.MonkeyP
     args = argparse.Namespace(port=None, protocol=None, baudrate=115200, timeout=1)
     profile = VehicleProfile(2018, "Ford", "F-150")
     called: list[str] = []
-    monkeypatch.setattr(tools, "load_vehicle_profile", lambda: None)
     monkeypatch.setattr(tools, "prompt_vehicle_profile", lambda console: profile)
     monkeypatch.setattr(tools, "OBDConnection", lambda **kwargs: _FakeToolConnection(True))
-    monkeypatch.setattr(tools, "SessionLog", _FakeSessionLog)
     monkeypatch.setattr(tools, "scan_ports", lambda: [])
     monkeypatch.setattr(tools, "show_dtcs", lambda *args, **kwargs: called.append("dtcs"))
 
@@ -475,7 +714,6 @@ def test_readiness_rows_handles_status_payload(monkeypatch: pytest.MonkeyPatch) 
 
 def test_show_dtcs_renders_codes(monkeypatch: pytest.MonkeyPatch) -> None:
     console = Console(record=True)
-    log = _FakeSessionLog("dtcs", None)
     monkeypatch.setattr(
         tools,
         "DTCReader",
@@ -484,17 +722,16 @@ def test_show_dtcs_renders_codes(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     )
 
-    tools.show_dtcs(console, object(), log)  # type: ignore[arg-type]
+    tools.show_dtcs(console, object())  # type: ignore[arg-type]
 
     assert "P0420" in console.export_text()
-    assert log.rows[0][0] == "dtcs"
 
 
 def test_show_dtcs_renders_empty_state(monkeypatch: pytest.MonkeyPatch) -> None:
     console = Console(record=True)
     monkeypatch.setattr(tools, "DTCReader", lambda connection: SimpleNamespace(get_dtcs=lambda: []))
 
-    tools.show_dtcs(console, object(), _FakeSessionLog("dtcs", None))  # type: ignore[arg-type]
+    tools.show_dtcs(console, object())  # type: ignore[arg-type]
 
     assert "No current or confirmed fault codes reported" in console.export_text()
 
@@ -513,7 +750,7 @@ def test_show_readiness_renders_rows(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     connection = SimpleNamespace(get_connection=lambda: SimpleNamespace())
 
-    tools.show_readiness(console, connection, _FakeSessionLog("readiness", None))  # type: ignore[arg-type]
+    tools.show_readiness(console, connection)  # type: ignore[arg-type]
 
     assert "MIL" in console.export_text()
 
@@ -523,7 +760,7 @@ def test_show_readiness_renders_empty_state(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setattr(tools, "READINESS_COMMANDS", [])
     connection = SimpleNamespace(get_connection=lambda: SimpleNamespace())
 
-    tools.show_readiness(console, connection, _FakeSessionLog("readiness", None))  # type: ignore[arg-type]
+    tools.show_readiness(console, connection)  # type: ignore[arg-type]
 
     assert "No readiness data reported" in console.export_text()
 
@@ -534,7 +771,7 @@ def test_show_readiness_skips_missing_command(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(tools.obd, "commands", SimpleNamespace())
     connection = SimpleNamespace(get_connection=lambda: SimpleNamespace())
 
-    tools.show_readiness(console, connection, _FakeSessionLog("readiness", None))  # type: ignore[arg-type]
+    tools.show_readiness(console, connection)  # type: ignore[arg-type]
 
     assert "No readiness data reported" in console.export_text()
 
@@ -547,12 +784,12 @@ def test_show_freeze_frame_renders_rows_and_empty(monkeypatch: pytest.MonkeyPatc
         "_query_named_commands",
         lambda conn, commands: [{"label": "RPM", "value": "750", "unit": "rpm", "status": "ok"}],
     )
-    tools.show_freeze_frame(console, connection, _FakeSessionLog("freeze", None))  # type: ignore[arg-type]
+    tools.show_freeze_frame(console, connection)  # type: ignore[arg-type]
     assert "RPM" in console.export_text()
 
     console = Console(record=True)
     monkeypatch.setattr(tools, "_query_named_commands", lambda conn, commands: [])
-    tools.show_freeze_frame(console, connection, _FakeSessionLog("freeze", None))  # type: ignore[arg-type]
+    tools.show_freeze_frame(console, connection)  # type: ignore[arg-type]
     assert "No supported freeze-frame PIDs reported" in console.export_text()
 
 
@@ -581,14 +818,13 @@ def test_show_health_snapshot_renders_summary(monkeypatch: pytest.MonkeyPatch) -
         ],
     )
 
-    tools.show_health_snapshot(console, connection, _FakeSessionLog("snapshot", None))  # type: ignore[arg-type]
+    tools.show_health_snapshot(console, connection)  # type: ignore[arg-type]
 
     assert "Fault codes" in console.export_text()
 
 
 def test_show_live_sensors_captures_one_sample(monkeypatch: pytest.MonkeyPatch) -> None:
     console = Console(file=None)
-    log = _FakeSessionLog("sensors", None)
     snapshot = {"RPM": SensorValue("RPM", "750", "rpm", datetime(2026, 5, 22, 1, 2, 3), True)}
 
     class FakePoller:
@@ -615,16 +851,13 @@ def test_show_live_sensors_captures_one_sample(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(tools, "Live", FakeLive)
     monkeypatch.setattr(tools.time, "sleep", lambda seconds: None)
 
-    tools.show_live_sensors(console, object(), log, samples=1, interval=0, show_graphs=False)  # type: ignore[arg-type]
-
-    assert log.rows[0][0] == "sensor_snapshot"
+    tools.show_live_sensors(console, object(), samples=1, interval=0, show_graphs=False)  # type: ignore[arg-type]
 
 
 def test_show_live_sensors_with_graphs_and_keyboard_interrupt(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     console = Console(record=True)
-    log = _FakeSessionLog("sensors", None)
     snapshot = {"RPM": SensorValue("RPM", "750", "rpm", datetime(2026, 5, 22, 1, 2, 3), True)}
 
     class FakePoller:
@@ -649,7 +882,7 @@ def test_show_live_sensors_with_graphs_and_keyboard_interrupt(
 
     monkeypatch.setattr(tools, "SensorPoller", FakePoller)
     monkeypatch.setattr(tools, "Live", FakeLive)
-    tools.show_live_sensors(console, object(), log, samples=1, show_graphs=True)  # type: ignore[arg-type]
+    tools.show_live_sensors(console, object(), samples=1, show_graphs=True)  # type: ignore[arg-type]
     assert "Stopped live sensors" in console.export_text()
 
     class OneSamplePoller:
@@ -661,7 +894,7 @@ def test_show_live_sensors_with_graphs_and_keyboard_interrupt(
 
     monkeypatch.setattr(tools, "SensorPoller", OneSamplePoller)
     monkeypatch.setattr(tools.time, "sleep", lambda seconds: None)
-    tools.show_live_sensors(Console(file=None), object(), log, samples=1, show_graphs=True)  # type: ignore[arg-type]
+    tools.show_live_sensors(Console(file=None), object(), samples=1, show_graphs=True)  # type: ignore[arg-type]
 
 
 def test_sensor_tables_and_graph_empty_state(monkeypatch: pytest.MonkeyPatch) -> None:

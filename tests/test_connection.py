@@ -53,6 +53,18 @@ def test_scan_ports_by_platform(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     assert scan_ports() == ["/dev/ttyACM0", "/dev/ttyUSB1"]
 
+    monkeypatch.setattr(connection.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(
+        connection.glob,
+        "glob",
+        lambda pattern: (
+            ["/dev/cu.usbserial-B"]
+            if pattern == "/dev/cu.usbserial-*"
+            else ["/dev/tty.usbserial-A"]
+        ),
+    )
+    assert scan_ports() == ["/dev/cu.usbserial-B", "/dev/tty.usbserial-A"]
+
     monkeypatch.setattr(connection.platform, "system", lambda: "Windows")
     monkeypatch.setattr(
         connection.list_ports,

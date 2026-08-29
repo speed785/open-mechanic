@@ -1,130 +1,77 @@
 # API Contract
 
-Last reviewed: 2026-05-22
+Last reviewed: 2026-08-29
 
-The FastAPI backend is a read-only Phase 3 foundation for dashboards, local automations, and future self-hosted deployments. It wraps the existing OBD, DTC, vehicle profile, and AI diagnostic modules without requiring web callers to know those internals.
+The local FastAPI service exposes read-only diagnostic calls. Responses are transient
+and **not persisted**: no history, database row, result cache, telemetry, or implicit AI
+request is created.
 
-## Run Locally
+## Run locally
 
 ```bash
-pip install -e ".[api]"
+pip install -e ".[dev,api]"
 uvicorn open_mechanic.api:create_app --factory --reload
 ```
 
-Hardware calls use `OPEN_MECHANIC_API_OBD_TIMEOUT=3.0` and `OPEN_MECHANIC_API_OBD_RETRIES=1` by default so API smoke tests fail fast when no adapter is connected. Override those values for slower adapters.
-
-## Current Endpoints
+## Endpoints
 
 | Method | Path | Purpose |
-|--------|------|---------|
-| `GET` | `/api/health` | Service liveness check. |
-| `GET` | `/api/vehicle` | Local vehicle profile from `local_data/vehicle_profile.json`. |
-| `GET` | `/api/live` | One-shot live sensor snapshot. |
-| `GET` | `/api/dtc` | Current fault codes. |
-| `GET` | `/api/snapshot` | Combined connection, sensor, and DTC snapshot. |
-| `POST` | `/api/diagnose` | AI diagnosis using the current snapshot and submitted vehicle details. |
+|---|---|---|
+| `GET` | `/api/health` | Service liveness. |
+| `GET` | `/api/vehicle` | Ephemeral vehicle context if supplied to the service. |
+| `GET` | `/api/live` | Generic one-shot sensor snapshot. |
+| `GET` | `/api/dtc` | Generic emissions DTCs. |
+| `GET` | `/api/snapshot` | Combined generic snapshot. |
+| `POST` | `/api/diagnose` | Explicitly authorized external AI diagnosis. |
+| `GET` | `/api/stellantis/{vehicle}/dtc` | Catalog-bounded module DTC scan. |
+| `GET` | `/api/stellantis/{vehicle}/live/{group}` | Finite catalog-bounded live view. |
 
-## Response Shapes
+The only enhanced catalog/group values are `wrangler_jl_4xe_2024` and `cruise`.
+Stellantis hardware is OBDLink EX at fixed protocol 6 and 115200 baud. The API accepts
+an explicit `port` and a timeout greater than zero and at most 10 seconds. Live requests
+also require `samples` 1–60 and `interval` greater than zero and at most 10 seconds.
 
-`GET /api/health`
+Example URLs:
+
+```text
+/api/stellantis/wrangler_jl_4xe_2024/dtc?port=/dev/ttyUSB0&timeout=1
+/api/stellantis/wrangler_jl_4xe_2024/live/cruise?port=/dev/ttyUSB0&timeout=1&samples=3&interval=1
+```
+
+Responses preserve structured per-module states, provenance, applicability, unknown
+definitions, unsupported values, and partial errors. An adapter/permission failure is
+HTTP `503`; an unsupported catalog or group is `404`; invalid bounds are `422`. No
+endpoint exposes arbitrary commands, address scans, writes, security access, DTC clear,
+coding, flashing, or gateway bypass.
+
+## AI authorization
+
+`POST /api/diagnose` sends vehicle context and the current generic diagnostic snapshot
+to the configured external provider only when the request includes
+`external_sharing_authorized: true`.
 
 ```json
 {
-  "status": "ok",
-  "service": "open-mechanic"
-}
-```
-
-`GET /api/vehicle`
-
-```json
-{
-  "configured": true,
-  "year": 2018,
-  "make": "Ford",
-  "model": "F-150",
-  "mileage": 85000
-}
-```
-
-`GET /api/live` and `GET /api/snapshot`
-
-```json
-{
-  "connected": true,
-  "port": "/dev/cu.usbserial-0",
-  "protocol": "CAN",
-  "sensors": [
-    {
-      "name": "RPM",
-      "value": "750",
-      "unit": "rpm",
-      "supported": true,
-      "timestamp": "2026-05-22T01:02:03"
-    }
-  ],
-  "dtcs": []
-}
-```
-
-`GET /api/dtc`
-
-```json
-[
-  {
-    "code": "P0420",
-    "description": "Catalyst system efficiency below threshold",
-    "status": "confirmed",
-    "severity": "warning",
-    "category": "emissions"
-  }
-]
-```
-
-`POST /api/diagnose`
-
-Request:
-
-```json
-{
-  "year": 2018,
-  "make": "Ford",
-  "model": "F-150",
-  "mileage": 85000,
+  "year": 2030,
+  "make": "Synthetic",
+  "model": "Example",
+  "mileage": 10000,
   "vin": null,
-  "bypass_cache": false
+  "external_sharing_authorized": true
 }
 ```
 
-Response:
+This is invented synthetic data. Omitting authorization or setting it false returns
+HTTP `403` and makes no provider call. Authorization applies to that request only. AI
+responses are not cached; the response field `cached` remains for compatibility and is
+always false.
 
-```json
-{
-  "severity": "warning",
-  "summary": "Catalyst efficiency below threshold",
-  "likely_causes": ["Aged catalytic converter"],
-  "repair_steps": ["Inspect O2 sensor waveforms"],
-  "estimated_cost_usd": { "low": 100, "high": 500 },
-  "diy_feasible": false,
-  "diy_difficulty": "moderate",
-  "urgency": "soon",
-  "disclaimer": "This diagnosis is informational only and does not constitute professional mechanical advice. Consult a qualified mechanic before making safety-critical repairs.",
-  "dtc_codes": ["P0420"],
-  "vehicle_str": "2018 Ford F-150 (85,000 miles)",
-  "cached": false,
-  "timestamp": "2026-05-22T01:02:03"
-}
-```
+## Consumer requirements
 
-## Dashboard Contract Notes
-
-- Treat `/api/live` as a polling endpoint for now. A streaming endpoint can be added later without changing the snapshot shape.
-- Show `connected=false` as a normal no-adapter state, not as a dashboard crash.
-- Read `severity` and `category` as display hints. Do not use either value to clear codes or recommend safety-critical action without the disclaimer.
-- The current API is local-first. Auth, sessions, history, and hosted multi-user access are not implemented.
-
-## Planned Endpoints
-
-- `GET /api/history`: past diagnostic sessions once session persistence is promoted from local JSON logs.
-- `GET /api/guides/{dtc}`: repair guide content once guide sources and licensing are finalized.
-- `GET /api/live/stream`: optional SSE stream for dashboards that need live updates.
+- Render `unknown`, `unsupported`, and partial-error states as such; never substitute
+  zero or a guessed definition.
+- Display provenance/applicability, especially `community_unverified`.
+- Do not add client-side history by default.
+- Never ask a driver to operate a client while moving; use a passenger or qualified
+  technician.
+- Treat all output as informational, not professional mechanical advice.
