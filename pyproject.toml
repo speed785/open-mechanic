@@ -40,10 +40,13 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
+    "httpx2>=0.28.1",
+    "anyio>=4.0.0",
 ]
 api = [
     "fastapi>=0.100.0",
     "uvicorn[standard]>=0.20.0",
+    "httpx2>=0.28.1",
 ]
 
 [project.scripts]

@@ -8,7 +8,6 @@ from open_mechanic.connection import OBDConnection
 from open_mechanic.db.models import VehicleProfile as DiagnosticVehicleProfile
 from open_mechanic.dtc import DTCCode, DTCReader
 from open_mechanic.local_store import VehicleProfile as LocalVehicleProfile
-from open_mechanic.local_store import load_vehicle_profile
 from open_mechanic.reader import SensorPoller, SensorValue
 
 from .schemas import (
@@ -29,7 +28,7 @@ class DiagnosticAPIService:
     def __init__(
         self,
         connection_factory: ConnectionFactory | None = None,
-        profile_loader: ProfileLoader = load_vehicle_profile,
+        profile_loader: ProfileLoader = lambda: None,
         engine_factory: EngineFactory | None = None,
     ) -> None:
         self._connection_factory = connection_factory or _default_connection
@@ -142,7 +141,7 @@ class DiagnosticAPIService:
             vehicle,
             dtcs,
             sensor_snapshot,
-            bypass_cache=request.bypass_cache,
+            external_sharing_authorized=request.external_sharing_authorized,
         )
         return DiagnosisResponse(
             severity=result.severity,

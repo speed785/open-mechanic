@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import sys
 import time
-from dataclasses import asdict
 from datetime import datetime
 from typing import Any, Protocol
 
@@ -18,15 +17,7 @@ from rich.text import Text
 
 from open_mechanic.connection import OBDConnection, scan_ports
 from open_mechanic.dtc import DTCReader
-from open_mechanic.local_store import (
-    PROFILE_PATH,
-    SESSIONS_DIR,
-    SessionLog,
-    VehicleProfile,
-    ensure_local_dirs,
-    load_vehicle_profile,
-    save_vehicle_profile,
-)
+from open_mechanic.local_store import VehicleProfile
 from open_mechanic.reader import SENSOR_COMMANDS, SensorPoller, SensorValue
 
 VERSION = "0.1.0"
@@ -176,8 +167,6 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     console = Console()
-    ensure_local_dirs()
-
     if args.command is None:
         return run_tools_menu(args, console)
     if args.command == "tools":
@@ -202,7 +191,7 @@ def _add_connection_args(parser: argparse.ArgumentParser) -> None:
 
 
 def run_tools_menu(args: argparse.Namespace, console: Console) -> int:
-    profile = load_vehicle_profile()
+    profile: VehicleProfile | None = None
     selected = 1
     while True:
         selected = _select_menu_item(console, profile, selected)
@@ -306,7 +295,7 @@ def run_direct_tool(
     console: Console,
     profile: VehicleProfile | None = None,
 ) -> int:
-    active_profile = profile or load_vehicle_profile()
+    active_profile = profile
     if active_profile is None and tool_name != "profile":
         console.print("[yellow]Vehicle profile not set yet.[/yellow]")
         active_profile = prompt_vehicle_profile(console)
@@ -329,16 +318,6 @@ def run_direct_tool(
     protocol = raw_conn.protocol_name() if raw_conn is not None else "unknown"
     console.print(f"[green]Connected[/green] [dim]{protocol} on {connection.get_port()}[/dim]")
 
-    log = SessionLog(tool_name, active_profile)
-    log.write(
-        "connection",
-        {
-            "port": connection.get_port(),
-            "protocol": protocol,
-            "supported_commands": _supported_count(raw_conn),
-        },
-    )
-
     try:
         if tool_name == "sensors":
             samples = int(getattr(args, "samples", 0) or 0)
@@ -347,26 +326,24 @@ def run_direct_tool(
             show_live_sensors(
                 console,
                 connection,
-                log,
                 samples=samples,
                 interval=interval,
                 show_graphs=show_graphs,
             )
         elif tool_name == "dtcs":
-            show_dtcs(console, connection, log)
+            show_dtcs(console, connection)
         elif tool_name == "readiness":
-            show_readiness(console, connection, log)
+            show_readiness(console, connection)
         elif tool_name == "freeze-frame":
-            show_freeze_frame(console, connection, log)
+            show_freeze_frame(console, connection)
         elif tool_name == "snapshot":
-            show_health_snapshot(console, connection, log)
+            show_health_snapshot(console, connection)
         else:
             console.print(f"[red]Unknown tool:[/red] {tool_name}")
             return 2
     finally:
         connection.disconnect()
 
-    console.print(f"[dim]Session log: {log.path}[/dim]")
     return 0
 
 
@@ -378,8 +355,7 @@ def prompt_vehicle_profile(console: Console) -> VehicleProfile:
     mileage_text = Prompt.ask("Mileage (optional)", default="").strip()
     mileage = int(mileage_text) if mileage_text.isdigit() else None
     profile = VehicleProfile(year=year, make=make, model=model, mileage=mileage)
-    save_vehicle_profile(profile)
-    console.print(f"[green]Saved profile locally:[/green] {PROFILE_PATH}")
+    console.print("[green]Profile ready for this run.[/green]")
     return profile
 
 
@@ -469,7 +445,7 @@ def _option_table(title: str, options: list[str], selected: int) -> Table:
 
 
 def show_profile(console: Console, profile: VehicleProfile | None = None) -> None:
-    active_profile = profile or load_vehicle_profile()
+    active_profile = profile
     table = Table(title="Vehicle Profile", show_header=False, border_style="dim")
     table.add_column("Field", style="bold dim")
     table.add_column("Value")
@@ -481,14 +457,13 @@ def show_profile(console: Console, profile: VehicleProfile | None = None) -> Non
             "Mileage",
             str(active_profile.mileage) if active_profile.mileage else "[dim]not set[/dim]",
         )
-        table.add_row("Storage", str(PROFILE_PATH))
+        table.add_row("Storage", "[dim]in memory only[/dim]")
     console.print(table)
 
 
 def show_live_sensors(
     console: Console,
     connection: OBDConnection,
-    log: SessionLog,
     samples: int = 0,
     interval: float = 1.0,
     show_graphs: bool = True,
@@ -502,7 +477,6 @@ def show_live_sensors(
                 snapshot = poller.get_snapshot()
                 captured += 1
                 _update_sensor_history(history, snapshot)
-                log.write("sensor_snapshot", _sensor_payload(snapshot))
                 table = _sensor_table(snapshot, title=f"Live Sensors - sample {captured}")
                 if show_graphs:
                     live.update(Group(table, _sensor_graph_table(history)))
@@ -513,9 +487,8 @@ def show_live_sensors(
         console.print("\n[yellow]Stopped live sensors.[/yellow]")
 
 
-def show_dtcs(console: Console, connection: OBDConnection, log: SessionLog) -> None:
+def show_dtcs(console: Console, connection: OBDConnection) -> None:
     dtcs = DTCReader(connection).get_dtcs()
-    log.write("dtcs", {"codes": [asdict(dtc) for dtc in dtcs]})
     table = Table(title="Fault Codes", border_style="dim")
     table.add_column("Code", style="bold red", no_wrap=True)
     table.add_column("Status")
@@ -529,7 +502,7 @@ def show_dtcs(console: Console, connection: OBDConnection, log: SessionLog) -> N
     console.print(table)
 
 
-def show_readiness(console: Console, connection: OBDConnection, log: SessionLog) -> None:
+def show_readiness(console: Console, connection: OBDConnection) -> None:
     conn = _require_raw_connection(connection)
     rows: list[dict[str, Any]] = []
     for name in READINESS_COMMANDS:
@@ -538,7 +511,6 @@ def show_readiness(console: Console, connection: OBDConnection, log: SessionLog)
             continue
         rows.extend(_readiness_rows(conn, name, command))
 
-    log.write("readiness", {"rows": rows})
     table = Table(title="Readiness Monitors", border_style="dim")
     table.add_column("Source", style="bold")
     table.add_column("Monitor")
@@ -557,10 +529,9 @@ def show_readiness(console: Console, connection: OBDConnection, log: SessionLog)
     console.print(table)
 
 
-def show_freeze_frame(console: Console, connection: OBDConnection, log: SessionLog) -> None:
+def show_freeze_frame(console: Console, connection: OBDConnection) -> None:
     conn = _require_raw_connection(connection)
     rows = _query_named_commands(conn, FREEZE_FRAME_COMMANDS)
-    log.write("freeze_frame", {"rows": rows})
     table = Table(title="Freeze Frame", border_style="dim")
     table.add_column("PID", style="bold")
     table.add_column("Value")
@@ -574,7 +545,7 @@ def show_freeze_frame(console: Console, connection: OBDConnection, log: SessionL
     console.print(table)
 
 
-def show_health_snapshot(console: Console, connection: OBDConnection, log: SessionLog) -> None:
+def show_health_snapshot(console: Console, connection: OBDConnection) -> None:
     conn = _require_raw_connection(connection)
     rows = _query_named_commands(conn, HEALTH_COMMANDS)
     dtcs = DTCReader(connection).get_dtcs()
@@ -582,11 +553,6 @@ def show_health_snapshot(console: Console, connection: OBDConnection, log: Sessi
     status_cmd = getattr(obd.commands, "STATUS", None)
     if status_cmd is not None:
         readiness = _readiness_rows(conn, "STATUS", status_cmd)
-
-    log.write(
-        "health_snapshot",
-        {"sensors": rows, "dtcs": [asdict(dtc) for dtc in dtcs], "readiness": readiness},
-    )
 
     sensor_table = Table(title="Health Snapshot", border_style="dim")
     sensor_table.add_column("Metric", style="bold")
@@ -603,7 +569,7 @@ def show_health_snapshot(console: Console, connection: OBDConnection, log: Sessi
     summary.add_row("Fault codes", str(len(dtcs)))
     incomplete = [row for row in readiness if row.get("available") and not row.get("complete")]
     summary.add_row("Incomplete readiness monitors", str(len(incomplete)))
-    summary.add_row("Local session directory", str(SESSIONS_DIR))
+    summary.add_row("Storage", "in memory only")
     console.print(summary)
 
 

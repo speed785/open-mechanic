@@ -50,7 +50,7 @@ class DiagnoseRequest(BaseModel):
     model: str
     mileage: int
     vin: str | None = None
-    bypass_cache: bool = False
+    external_sharing_authorized: bool = False
 
 
 class DiagnosisResponse(BaseModel):

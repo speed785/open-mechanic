@@ -78,9 +78,9 @@ class FakeEngine:
         dtcs: list[DTCCode],
         sensor_snapshot: dict[str, Any],
         *,
-        bypass_cache: bool = False,
+        external_sharing_authorized: bool = False,
     ) -> DiagnosisResult:
-        self.calls.append((vehicle, dtcs, sensor_snapshot, bypass_cache))
+        self.calls.append((vehicle, dtcs, sensor_snapshot, external_sharing_authorized))
         return DiagnosisResult(
             severity="warning",
             summary="Catalyst efficiency below threshold",
@@ -190,7 +190,7 @@ def test_snapshot_combines_sensors_and_dtcs(monkeypatch: Any) -> None:
     assert connection.disconnected is True
 
 
-def test_diagnose_passes_vehicle_snapshot_and_cache_flag(monkeypatch: Any) -> None:
+def test_diagnose_passes_vehicle_snapshot_and_sharing_authorization(monkeypatch: Any) -> None:
     engine = FakeEngine()
     monkeypatch.setattr("open_mechanic.api.services.SensorPoller", FakeSensorPoller)
     monkeypatch.setattr("open_mechanic.api.services.DTCReader", FakeDTCReader)
@@ -205,16 +205,16 @@ def test_diagnose_passes_vehicle_snapshot_and_cache_flag(monkeypatch: Any) -> No
             make="Ford",
             model="F-150",
             mileage=85000,
-            bypass_cache=True,
+            external_sharing_authorized=True,
         )
     )
 
-    vehicle, dtcs, sensor_snapshot, bypass_cache = engine.calls[0]
+    vehicle, dtcs, sensor_snapshot, sharing_authorized = engine.calls[0]
     assert result.summary == "Catalyst efficiency below threshold"
     assert vehicle.model == "F-150"
     assert dtcs[0].code == "P0420"
     assert sensor_snapshot["RPM"]["supported"] is True
-    assert bypass_cache is True
+    assert sharing_authorized is True
 
 
 def test_default_connection_uses_api_tuned_timeout(monkeypatch: Any) -> None:

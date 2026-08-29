@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi.testclient import TestClient
+import httpx2
+import pytest
 
 from open_mechanic.api import create_app
 from open_mechanic.api.schemas import (
@@ -84,63 +85,93 @@ class FakeService:
         )
 
 
-def test_health_endpoint_returns_ok() -> None:
-    client = TestClient(create_app(service=FakeService()))
+@pytest.fixture
+def anyio_backend() -> str:
+    return "asyncio"
 
-    assert client.get("/api/health").json() == {"status": "ok", "service": "open-mechanic"}
+
+def _transport(service: FakeService) -> httpx2.ASGITransport:
+    return httpx2.ASGITransport(app=create_app(service=service))
 
 
-def test_vehicle_endpoint_returns_profile() -> None:
-    client = TestClient(create_app(service=FakeService()))
+@pytest.mark.anyio
+async def test_health_endpoint_returns_ok() -> None:
+    async with httpx2.AsyncClient(transport=_transport(FakeService()), base_url="http://test") as client:
+        response = await client.get("/api/health")
 
-    response = client.get("/api/vehicle")
+    assert response.json() == {"status": "ok", "service": "open-mechanic"}
+
+
+@pytest.mark.anyio
+async def test_vehicle_endpoint_returns_profile() -> None:
+    async with httpx2.AsyncClient(transport=_transport(FakeService()), base_url="http://test") as client:
+        response = await client.get("/api/vehicle")
 
     assert response.status_code == 200
     assert response.json()["model"] == "F-150"
 
 
-def test_live_endpoint_returns_sensor_snapshot() -> None:
-    client = TestClient(create_app(service=FakeService()))
-
-    response = client.get("/api/live")
+@pytest.mark.anyio
+async def test_live_endpoint_returns_sensor_snapshot() -> None:
+    async with httpx2.AsyncClient(transport=_transport(FakeService()), base_url="http://test") as client:
+        response = await client.get("/api/live")
 
     assert response.status_code == 200
     assert response.json()["sensors"][0]["name"] == "RPM"
 
 
-def test_dtc_endpoint_returns_fault_codes() -> None:
-    client = TestClient(create_app(service=FakeService()))
-
-    response = client.get("/api/dtc")
+@pytest.mark.anyio
+async def test_dtc_endpoint_returns_fault_codes() -> None:
+    async with httpx2.AsyncClient(transport=_transport(FakeService()), base_url="http://test") as client:
+        response = await client.get("/api/dtc")
 
     assert response.status_code == 200
     assert response.json()[0]["code"] == "P0420"
 
 
-def test_snapshot_endpoint_returns_combined_snapshot() -> None:
-    client = TestClient(create_app(service=FakeService()))
-
-    response = client.get("/api/snapshot")
+@pytest.mark.anyio
+async def test_snapshot_endpoint_returns_combined_snapshot() -> None:
+    async with httpx2.AsyncClient(transport=_transport(FakeService()), base_url="http://test") as client:
+        response = await client.get("/api/snapshot")
 
     assert response.status_code == 200
     assert response.json()["dtcs"][0]["severity"] == "warning"
 
 
-def test_diagnose_endpoint_passes_request_to_service() -> None:
+@pytest.mark.anyio
+async def test_diagnose_endpoint_passes_request_to_service() -> None:
     service = FakeService()
-    client = TestClient(create_app(service=service))
-
-    response = client.post(
-        "/api/diagnose",
-        json={
-            "year": 2018,
-            "make": "Ford",
-            "model": "F-150",
-            "mileage": 85000,
-            "bypass_cache": True,
-        },
-    )
+    async with httpx2.AsyncClient(transport=_transport(service), base_url="http://test") as client:
+        response = await client.post(
+            "/api/diagnose",
+            json={
+                "year": 2018,
+                "make": "Ford",
+                "model": "F-150",
+                "mileage": 85000,
+                "external_sharing_authorized": True,
+            },
+        )
 
     assert response.status_code == 200
     assert response.json()["summary"] == "Catalyst efficiency below threshold"
-    assert service.diagnose_requests[0].bypass_cache is True
+    assert service.diagnose_requests[0].external_sharing_authorized is True
+
+
+@pytest.mark.anyio
+async def test_api_authorization_applies_to_one_request_only() -> None:
+    service = FakeService()
+    async with httpx2.AsyncClient(transport=_transport(service), base_url="http://test") as client:
+        first = await client.post(
+            "/api/diagnose",
+            json={"year": 2020, "make": "Example", "model": "Vehicle", "mileage": 1,
+                  "external_sharing_authorized": True},
+        )
+        second = await client.post(
+            "/api/diagnose",
+            json={"year": 2020, "make": "Example", "model": "Vehicle", "mileage": 1},
+        )
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert [request.external_sharing_authorized for request in service.diagnose_requests] == [True, False]

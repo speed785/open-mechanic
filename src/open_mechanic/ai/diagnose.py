@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
@@ -27,6 +27,10 @@ DISCLAIMER = (
 
 class DiagnosticError(Exception):
     pass
+
+
+class ExternalSharingNotAuthorized(DiagnosticError):
+    """Raised before vehicle data is sent without per-request authorization."""
 
 
 @dataclass
@@ -99,42 +103,20 @@ class DiagnosticEngine:
 
         self._model: str = model or os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-5"
         self._client: anthropic.Anthropic = anthropic.Anthropic(api_key=resolved_api_key)
-        self._cache: dict[str, tuple[DiagnosisResult, datetime]] = {}
-        self._cache_ttl: float = 86400.0
-
-    def _cache_key(self, dtc_codes: list[str], vehicle_str: str) -> str:
-        return f"{vehicle_str}|{','.join(sorted(dtc_codes))}"
-
-    def _diagnostic_cache_key(
-        self,
-        dtc_codes: list[str],
-        vehicle_str: str,
-        snapshot: dict[str, Any],
-    ) -> str:
-        snapshot_json = json.dumps(_normalize_for_cache(snapshot), sort_keys=True, default=str)
-        return f"{self._cache_key(dtc_codes, vehicle_str)}|{snapshot_json}"
-
-    def _is_cache_valid(self, key: str) -> bool:
-        if key not in self._cache:
-            return False
-        _, cached_at = self._cache[key]
-        return (datetime.now() - cached_at).total_seconds() < self._cache_ttl
-
     def diagnose(
         self,
         vehicle: VehicleProfile,
         dtcs: list[DTCCode],
         snapshot: dict[str, Any],
         *,
-        bypass_cache: bool = False,
+        external_sharing_authorized: bool = False,
     ) -> DiagnosisResult:
+        if not external_sharing_authorized:
+            raise ExternalSharingNotAuthorized(
+                "AI diagnosis requires explicit authorization for this request"
+            )
         vehicle_str = f"{vehicle.year} {vehicle.make} {vehicle.model} ({vehicle.mileage:,} miles)"
         dtc_codes = [dtc.code for dtc in dtcs]
-
-        key = self._diagnostic_cache_key(dtc_codes, vehicle_str, snapshot)
-        if not bypass_cache and self._is_cache_valid(key):
-            cached_result, _ = self._cache[key]
-            return replace(cached_result, cached=True)
 
         user_message = format_diagnostic_prompt(vehicle, dtcs, snapshot)
 
@@ -173,7 +155,6 @@ class DiagnosticEngine:
                 timestamp=datetime.now(),
             )
             result.disclaimer = DISCLAIMER
-            self._cache[key] = (result, datetime.now())
             return result
         except (json.JSONDecodeError, ValueError) as exc:
             logger.error("Failed to parse Claude diagnostic JSON: %s", exc)
@@ -192,22 +173,7 @@ class DiagnosticEngine:
                 timestamp=datetime.now(),
             )
             fallback_result.disclaimer = DISCLAIMER
-            self._cache[key] = (fallback_result, datetime.now())
             return fallback_result
         except anthropic.APIError as exc:
             logger.error("Claude API error during diagnostic call: %s", exc)
             raise DiagnosticError(str(exc)) from exc
-
-
-def _normalize_for_cache(value: Any) -> Any:
-    if isinstance(value, dict):
-        return {str(key): _normalize_for_cache(item) for key, item in value.items()}
-    if isinstance(value, list | tuple):
-        return [_normalize_for_cache(item) for item in value]
-    if hasattr(value, "supported") and hasattr(value, "value"):
-        return {
-            "supported": bool(value.supported),
-            "value": str(value.value),
-            "unit": getattr(value, "unit", None),
-        }
-    return value

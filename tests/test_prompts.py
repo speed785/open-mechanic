@@ -27,12 +27,14 @@ def test_format_sensor_snapshot_formats_supported_and_unsupported_values() -> No
             "unit": "°C",
             "supported": False,
         },
+        "LOAD": {"value": "25", "unit": None, "supported": True},
     }
 
     formatted = format_sensor_snapshot(snapshot)
 
     assert "  RPM: 750 rpm" in formatted
     assert "  INTAKE_TEMP: N/A (unsupported)" in formatted
+    assert "  LOAD: 25" in formatted
 
 
 def test_format_sensor_snapshot_handles_plain_values() -> None:

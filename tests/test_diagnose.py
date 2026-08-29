@@ -7,7 +7,11 @@ from typing import Any
 import pytest
 
 from open_mechanic.ai import diagnose
-from open_mechanic.ai.diagnose import DISCLAIMER, DiagnosticEngine
+from open_mechanic.ai.diagnose import (
+    DISCLAIMER,
+    DiagnosticEngine,
+    ExternalSharingNotAuthorized,
+)
 from open_mechanic.db.models import VehicleProfile
 from open_mechanic.dtc import DTCCode
 
@@ -82,58 +86,39 @@ def _engine_with_responses(responses: list[str]) -> tuple[DiagnosticEngine, _Fak
     return engine, fake_client
 
 
-def test_diagnose_cache_key_changes_when_sensor_snapshot_changes() -> None:
+def test_diagnose_does_not_cache_complete_inputs() -> None:
     engine, fake_client = _engine_with_responses(
         [_diagnosis_json("first"), _diagnosis_json("second")]
     )
 
-    first = engine.diagnose(_vehicle(), _dtcs(), {"RPM": {"value": "750", "supported": True}})
-    second = engine.diagnose(_vehicle(), _dtcs(), {"RPM": {"value": "2500", "supported": True}})
+    first = engine.diagnose(_vehicle(), _dtcs(), {}, external_sharing_authorized=True)
+    second = engine.diagnose(_vehicle(), _dtcs(), {}, external_sharing_authorized=True)
 
     assert first.summary == "first"
     assert second.summary == "second"
     assert second.cached is False
     assert len(fake_client.messages.calls) == 2
+    assert not hasattr(engine, "_cache")
 
 
-def test_diagnose_reuses_cache_for_same_complete_input() -> None:
-    engine, fake_client = _engine_with_responses([_diagnosis_json("first")])
+def test_diagnose_rejects_before_client_call_without_explicit_authorization() -> None:
+    engine, fake_client = _engine_with_responses([_diagnosis_json("unused")])
 
-    first = engine.diagnose(_vehicle(), _dtcs(), {"RPM": {"value": "750", "supported": True}})
-    second = engine.diagnose(_vehicle(), _dtcs(), {"RPM": {"value": "750", "supported": True}})
+    with pytest.raises(ExternalSharingNotAuthorized):
+        engine.diagnose(_vehicle(), _dtcs(), {})
 
-    assert first.cached is False
-    assert second.cached is True
-    assert second.summary == "first"
-    assert len(fake_client.messages.calls) == 1
-
-
-def test_diagnose_can_bypass_cache_for_same_complete_input() -> None:
-    engine, fake_client = _engine_with_responses(
-        [_diagnosis_json("first"), _diagnosis_json("second")]
-    )
-
-    first = engine.diagnose(_vehicle(), _dtcs(), {"RPM": {"value": "750", "supported": True}})
-    second = engine.diagnose(
-        _vehicle(),
-        _dtcs(),
-        {"RPM": {"value": "750", "supported": True}},
-        bypass_cache=True,
-    )
-
-    assert first.summary == "first"
-    assert second.summary == "second"
-    assert second.cached is False
-    assert len(fake_client.messages.calls) == 2
+    assert fake_client.messages.calls == []
 
 
 def test_diagnose_returns_disclaimer_fallback_for_non_object_json() -> None:
     engine, _ = _engine_with_responses(["[]"])
 
-    result = engine.diagnose(_vehicle(), _dtcs(), {})
+    result = engine.diagnose(_vehicle(), _dtcs(), {}, external_sharing_authorized=True)
 
     assert result.summary == "Diagnosis unavailable - could not parse AI response"
     assert result.disclaimer == DISCLAIMER
+    assert result.cached is False
+    assert not hasattr(engine, "_cache")
 
 
 @pytest.mark.parametrize(
@@ -146,7 +131,7 @@ def test_diagnose_returns_disclaimer_fallback_for_non_object_json() -> None:
 def test_diagnose_parses_plain_and_fenced_json(raw_json: str, expected: str) -> None:
     engine, _ = _engine_with_responses([raw_json])
 
-    result = engine.diagnose(_vehicle(), _dtcs(), {})
+    result = engine.diagnose(_vehicle(), _dtcs(), {}, external_sharing_authorized=True)
 
     assert result.summary == expected
     assert result.disclaimer == DISCLAIMER
@@ -168,7 +153,7 @@ def test_diagnose_coerces_bad_field_types_to_safe_defaults() -> None:
         ]
     )
 
-    result = engine.diagnose(_vehicle(), _dtcs(), {})
+    result = engine.diagnose(_vehicle(), _dtcs(), {}, external_sharing_authorized=True)
 
     assert result.likely_causes == []
     assert result.repair_steps == ["Step B"]
@@ -197,14 +182,6 @@ def test_strip_markdown_code_fences_handles_generic_fence() -> None:
     assert diagnose._strip_markdown_code_fences("```\n{}\n```") == "{}"
 
 
-def test_normalize_for_cache_handles_lists_and_sensor_values() -> None:
-    sensor = SimpleSensor(value=750, unit="rpm", supported=True)
-
-    assert diagnose._normalize_for_cache({"items": [sensor]}) == {
-        "items": [{"supported": True, "value": "750", "unit": "rpm"}]
-    }
-
-
 def test_diagnose_wraps_anthropic_api_errors(monkeypatch: pytest.MonkeyPatch) -> None:
     class FakeAPIError(Exception):
         pass
@@ -218,7 +195,7 @@ def test_diagnose_wraps_anthropic_api_errors(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(diagnose.anthropic, "APIError", FakeAPIError)
 
     with pytest.raises(diagnose.DiagnosticError, match="api down"):
-        engine.diagnose(_vehicle(), _dtcs(), {})
+        engine.diagnose(_vehicle(), _dtcs(), {}, external_sharing_authorized=True)
 
 
 @dataclass
