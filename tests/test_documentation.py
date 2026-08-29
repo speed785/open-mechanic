@@ -37,6 +37,7 @@ def test_linux_setup_documents_fixed_and_bounded_stellantis_commands() -> None:
 
 
 def test_api_and_ai_docs_require_explicit_external_sharing() -> None:
+    readme = _read("README.md")
     api = _read("docs/API.md")
     providers = _read("docs/AI_PROVIDERS.md")
 
@@ -46,6 +47,11 @@ def test_api_and_ai_docs_require_explicit_external_sharing() -> None:
     assert "explicit per-request authorization" in providers
     assert "--share-with-ai" in providers
     assert "not cached" in providers
+    assert "Every CLI AI invocation requires `--share-with-ai`" in providers
+    assert "exits before adapter or AI access" in providers
+    assert "Every CLI AI invocation requires `--share-with-ai`" in readme
+    assert "Interactive use confirms" not in readme
+    assert "asks for confirmation" not in providers
 
 
 def test_contributor_docs_preserve_safety_and_data_boundaries() -> None:

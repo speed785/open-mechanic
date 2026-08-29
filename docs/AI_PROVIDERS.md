@@ -8,9 +8,9 @@ there is no standing consent.
 
 ## Authorization flow
 
-- Interactive diagnosis displays the categories that would be transmitted and asks
-  for confirmation for that invocation.
-- Non-interactive CLI use requires `--share-with-ai`.
+- Every CLI AI invocation requires `--share-with-ai`.
+- Without the flag, the CLI displays the categories that would be shared and exits before adapter or AI access.
+  It does not prompt or retain authorization.
 - API use requires `external_sharing_authorized: true`; otherwise it returns `403`
   without calling the provider.
 - Local scan, DTC, snapshot, and Stellantis commands never invoke AI.
@@ -24,8 +24,8 @@ python scripts/diagnose.py --vehicle "Synthetic Example Vehicle" \
   --mileage 10000 --protocol 6 --share-with-ai
 ```
 
-Before consenting, assume vehicle context, DTCs, and sensor snapshot fields shown by the
-prompt will leave the local machine. Do not share a VIN or other identifying value
+Before using the flag, assume vehicle context, DTCs, and sensor snapshot fields listed
+by the disclosure will leave the local machine. Do not share a VIN or identifying value
 unless it is genuinely necessary and intended.
 
 ## Provider rules

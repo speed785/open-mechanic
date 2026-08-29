@@ -72,9 +72,10 @@ security access, actuator command, coding, flashing, DTC clear, or gateway bypas
 Disallowed requests are rejected before the serial port opens.
 
 Local scans create no profiles, JSONL logs, database rows, result caches, telemetry, or
-network calls. AI diagnosis is separate and optional. Interactive use confirms what
-will be shared each time; non-interactive use requires `--share-with-ai`. Consent lasts
-for one invocation, and AI responses are not cached.
+network calls. AI diagnosis is separate and optional. Every CLI AI invocation requires `--share-with-ai`.
+Without it, the command displays the categories that would be shared
+and exits before adapter or AI access. Consent lasts for one invocation, and AI
+responses are not cached.
 
 ## Local API and AI
 
@@ -89,8 +90,8 @@ GET /api/stellantis/wrangler_jl_4xe_2024/dtc
 GET /api/stellantis/wrangler_jl_4xe_2024/live/cruise?samples=3&interval=1
 ```
 
-See [docs/API.md](docs/API.md). AI is unnecessary for local scanning. One
-non-interactive AI request can be authorized with:
+See [docs/API.md](docs/API.md). AI is unnecessary for local scanning. One CLI AI
+request can be authorized with:
 
 ```bash
 python scripts/diagnose.py --vehicle "Synthetic Example Vehicle" \

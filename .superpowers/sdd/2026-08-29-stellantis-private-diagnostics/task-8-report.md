@@ -35,3 +35,15 @@ Task 8 Step 6 was **NOT RUN**. No serial device was opened and no vehicle or ada
 accessed. The parked hardware acceptance test remains pending explicit approval.
 
 No network access occurred during this task.
+
+## Review fix: CLI AI disclosure
+
+The first review found one medium documentation mismatch: the docs described an
+interactive confirmation prompt that is not implemented. A regression assertion was
+added and observed failing before the docs changed. README, contributor guidance, AI
+provider guidance, design, and plan now state the actual behavior: every CLI AI
+invocation requires `--share-with-ai`; without it, the command lists the categories
+that would be shared and exits before adapter or AI access without prompting.
+
+Post-fix verification: Ruff format/check and mypy passed; all 532 tests passed with
+100.00% package line coverage under `-W error`. Hardware and network remained unused.

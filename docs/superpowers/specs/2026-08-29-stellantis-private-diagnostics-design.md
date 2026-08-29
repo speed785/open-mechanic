@@ -52,7 +52,7 @@ Local scans are private and ephemeral by default:
 
 The existing CLI is changed to stop persisting profiles and sessions. Vehicle context is supplied as command arguments or held only for the current interactive process. Existing persistence helpers may remain for compatibility with library consumers, but normal CLI and API diagnostic flows must not call them.
 
-AI diagnosis is a separate, explicit action. Before sending data, the command shows the exact categories to be transmitted and requires an interactive confirmation for that invocation. Non-interactive AI use requires an explicit `--share-with-ai` flag. AI responses are not cached. The local read-only scan remains fully useful without an API key or network connection.
+AI diagnosis is a separate, explicit action. Every CLI AI invocation requires `--share-with-ai`. Without the flag, the command shows the categories that would be transmitted and exits before adapter or AI access; it does not prompt. AI responses are not cached. The local read-only scan remains fully useful without an API key or network connection.
 
 Tests use invented VINs, DTCs, module addresses, and sensor values. Real scan output and raw frames must never be added to fixtures, snapshots, issue templates, documentation, commits, or pull-request text.
 
@@ -105,7 +105,7 @@ Add these CLI operations:
 
 - `open-mechanic stellantis-scan`: module discovery plus full read-only DTC report.
 - `open-mechanic stellantis-live --group cruise --samples N --interval SECONDS`: bounded ephemeral cruise-related live display.
-- `open-mechanic diagnose --share-with-ai`: explicit external analysis after disclosure and confirmation.
+- `open-mechanic diagnose --share-with-ai`: explicit external analysis after disclosure.
 
 The existing generic commands remain available but become non-persistent. Direct diagnostic commands do not require a saved profile.
 
@@ -151,4 +151,3 @@ Before completion, run the full pytest suite with 100% coverage, Ruff checks and
 ## Delivery
 
 The work ships as one pull request with reviewable commits for transport safety, protocol parsing, Stellantis catalog/scanner, ephemeral CLI/API behavior, and documentation. The README names OBDLink EX as the only required hardware, clearly separates generic from enhanced Stellantis coverage, documents the no-history default, and states that unsupported or protected functions require professional tooling rather than a bypass.
-

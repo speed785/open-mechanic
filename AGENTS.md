@@ -53,8 +53,9 @@ greater than zero and at most 10 seconds; samples are 1–60.
 - Never log or commit a VIN, adapter serial, observed DTCs, raw frames, or live values.
 - Fixtures and docs use only invented, clearly labeled **synthetic** data.
 - Local scans never call AI.
-- AI requires explicit per-request authorization; non-interactive use requires
-  `--share-with-ai`. Authorization is not retained and responses are not cached. The
+- Every CLI AI invocation requires `--share-with-ai`. Without it, the command displays
+  sharing categories and exits before adapter/AI access; it does not prompt.
+  Authorization is not retained and responses are not cached. The
   API `cached` field is compatibility-only and always false.
 - Begin parked with the parking brake set and ignition in RUN. During any moving test,
   a passenger or qualified technician operates the computer; never the driver.

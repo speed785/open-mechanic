@@ -512,7 +512,7 @@ def test_ai_client_is_not_called_without_per_request_authorization() -> None:
     assert engine._client.calls == []
 ```
 
-Also assert no cache entries exist after success/fallback, API authorization applies to one request only, and CLI non-interactive diagnosis requires `--share-with-ai`.
+Also assert no cache entries exist after success/fallback, API authorization applies to one request only, and every CLI AI diagnosis requires `--share-with-ai`.
 
 - [ ] **Step 2: Run privacy tests and verify RED**
 
@@ -526,7 +526,7 @@ Delete normal-flow calls to `ensure_local_dirs`, `load_vehicle_profile`, `save_v
 
 - [ ] **Step 4: Add explicit external-sharing authorization**
 
-Before creating the Anthropic message, raise `ExternalSharingNotAuthorized` unless the explicit boolean is true. The interactive CLI prints categories—not raw values—then obtains confirmation. Non-interactive invocation requires `--share-with-ai`.
+Before creating the Anthropic message, raise `ExternalSharingNotAuthorized` unless the explicit boolean is true. Every CLI AI invocation requires `--share-with-ai`; without it, the CLI prints categories—not raw values—and exits before adapter or AI access without prompting.
 
 - [ ] **Step 5: Repair API tests with a deterministic ASGI transport**
 
