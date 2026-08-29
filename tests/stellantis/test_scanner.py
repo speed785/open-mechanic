@@ -136,6 +136,9 @@ def test_security_denial_is_reported_without_an_unlock_request() -> None:
     values = StellantisScanner(transport, catalog).read_group("cruise")
 
     assert values[0].state is ModuleState.GATEWAY_BLOCKED
+    assert "service 0x22" in (values[0].error or "")
+    assert "NRC 0x33" in (values[0].error or "")
+    assert "securityAccessDenied" in (values[0].error or "")
     assert all(request.service != 0x27 for request in transport.requests)
     assert transport.opened == transport.closed == 1
 
@@ -211,6 +214,8 @@ def test_scan_reports_unsupported_and_negative_responses_without_dropping_module
 
     assert result.module("powertrain").state is ModuleState.UNSUPPORTED
     assert result.module("steering").state is ModuleState.NEGATIVE_RESPONSE
+    assert "service 0x19" in (result.module("steering").error or "")
+    assert "NRC 0x22" in (result.module("steering").error or "")
     assert "conditionsNotCorrect" in (result.module("steering").error or "")
 
 

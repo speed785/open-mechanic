@@ -193,7 +193,11 @@ class StellantisScanner:
                 f"({response.meaning}, NRC 0x{response.code:02X})",
             )
         state = ModuleState.GATEWAY_BLOCKED if response.code == 0x33 else ModuleState.NEGATIVE_RESPONSE
-        return state, f"{response.meaning} (NRC 0x{response.code:02X})"
+        return (
+            state,
+            f"negative response service 0x{response.service:02X}: "
+            f"{response.meaning} (NRC 0x{response.code:02X})",
+        )
 
     @staticmethod
     def _scan_result(
