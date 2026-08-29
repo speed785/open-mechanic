@@ -10,10 +10,13 @@ from dataclasses import dataclass, field
 from importlib import resources
 from types import MappingProxyType
 from typing import cast
+from urllib.parse import urlsplit
 
 _CATALOG_NAME = re.compile(r"[a-z0-9_]+")
 _HEX_VALUE = re.compile(r"0x[0-9A-Fa-f]+")
 _SAFE_SERVICES = frozenset({0x19, 0x22, 0x3E})
+_EVIDENCE_VALUES = frozenset({"vehicle_fixture", "community_reference"})
+_APPLICABILITY_VALUES = frozenset({"exact_model_year", "community_unverified"})
 
 
 class CatalogValidationError(ValueError):
@@ -26,6 +29,8 @@ class Provenance:
 
     document: str
     url: str
+    evidence: str
+    applicability: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,28 +111,62 @@ def _hex_integer(value: object, field_name: str, *, maximum: int) -> int:
 
 
 def _finite_number(value: object, field_name: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, int | float) or not math.isfinite(value):
+    if isinstance(value, bool) or not isinstance(value, int | float):
         raise CatalogValidationError(f"{field_name} must be finite")
-    return float(value)
+    try:
+        parsed = float(value)
+    except OverflowError as exc:
+        raise CatalogValidationError(f"{field_name} must be finite") from exc
+    if not math.isfinite(parsed):
+        raise CatalogValidationError(f"{field_name} must be finite")
+    return parsed
+
+
+def _is_https_url_with_network_location(value: str) -> bool:
+    try:
+        parsed = urlsplit(value)
+        _port = parsed.port
+    except ValueError:
+        return False
+    return parsed.scheme == "https" and parsed.hostname is not None
 
 
 def _parse_source(value: object) -> Provenance:
     raw = _mapping(value, "provenance")
     document = raw.get("document")
     url = raw.get("url")
+    evidence = raw.get("evidence")
+    applicability = raw.get("applicability")
     if (
         not isinstance(document, str)
         or not document.strip()
         or not isinstance(url, str)
-        or not url.startswith("https://")
+        or not _is_https_url_with_network_location(url)
     ):
         raise CatalogValidationError("provenance requires a document and HTTPS URL")
-    return Provenance(document=document, url=url)
+    if (
+        not isinstance(evidence, str)
+        or evidence not in _EVIDENCE_VALUES
+        or not isinstance(applicability, str)
+        or applicability not in _APPLICABILITY_VALUES
+    ):
+        raise CatalogValidationError(
+            "provenance has an unsupported evidence or applicability value"
+        )
+    return Provenance(
+        document=document,
+        url=url,
+        evidence=evidence,
+        applicability=applicability,
+    )
 
 
-def _parse_enum_map(value: object) -> Mapping[int, str]:
+def _parse_enum_map(value: object, *, width: int, signed: bool) -> Mapping[int, str]:
     raw = _mapping(value, "DID enum_map")
     parsed: dict[int, str] = {}
+    bit_width = width * 8
+    minimum = -(1 << (bit_width - 1)) if signed else 0
+    maximum = (1 << (bit_width - 1)) - 1 if signed else (1 << bit_width) - 1
     for key, label_value in raw.items():
         try:
             enum_key = int(key, 0)
@@ -135,6 +174,8 @@ def _parse_enum_map(value: object) -> Mapping[int, str]:
             raise CatalogValidationError("DID enum_map keys must be integers") from exc
         if enum_key in parsed:
             raise CatalogValidationError("DID enum_map contains duplicate integer keys")
+        if not minimum <= enum_key <= maximum:
+            raise CatalogValidationError("DID enum_map key is not representable by its width")
         parsed[enum_key] = _text(label_value, "DID enum label")
     return MappingProxyType(parsed)
 
@@ -146,9 +187,10 @@ def _parse_did(value: object) -> DIDDefinition:
     signed = raw["signed"]
     if type(signed) is not bool:
         raise CatalogValidationError("DID signed must be a boolean")
+    width = _integer(raw["width"], "DID width", minimum=1, maximum=8)
     unit_value = raw["unit"]
     unit = None if unit_value is None else _text(unit_value, "DID unit")
-    enum_map = _parse_enum_map(raw["enum_map"])
+    enum_map = _parse_enum_map(raw["enum_map"], width=width, signed=signed)
     if group == "cruise" and unit is None and not enum_map:
         raise CatalogValidationError("cruise DID requires a unit or enum mapping")
     return DIDDefinition(
@@ -156,7 +198,7 @@ def _parse_did(value: object) -> DIDDefinition:
         label=_text(raw["label"], "DID label"),
         group=group,
         signed=signed,
-        width=_integer(raw["width"], "DID width", minimum=1, maximum=8),
+        width=width,
         scale=_finite_number(raw["scale"], "DID scale"),
         offset=_finite_number(raw["offset"], "DID offset"),
         unit=unit,
@@ -208,9 +250,12 @@ def _parse_catalog(value: object) -> VehicleCatalog:
     module_keys = [module.key for module in catalog.modules]
     if len(module_keys) != len(set(module_keys)):
         raise CatalogValidationError("catalog contains a duplicate module key")
-    can_pairs = [(module.tx_id, module.rx_id) for module in catalog.modules]
-    if len(can_pairs) != len(set(can_pairs)):
-        raise CatalogValidationError("catalog contains a duplicate CAN pair")
+    tx_ids = [module.tx_id for module in catalog.modules]
+    if len(tx_ids) != len(set(tx_ids)):
+        raise CatalogValidationError("catalog contains a duplicate tx_id")
+    rx_ids = [module.rx_id for module in catalog.modules]
+    if len(rx_ids) != len(set(rx_ids)):
+        raise CatalogValidationError("catalog contains a duplicate rx_id")
     return catalog
 
 

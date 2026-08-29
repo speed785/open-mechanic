@@ -45,6 +45,8 @@ def _valid_catalog_data() -> dict[str, Any]:
                 "source": {
                     "document": "Synthetic public protocol fixture",
                     "url": "https://example.test/protocol",
+                    "evidence": "vehicle_fixture",
+                    "applicability": "exact_model_year",
                 },
                 "dids": [
                     {
@@ -60,6 +62,8 @@ def _valid_catalog_data() -> dict[str, Any]:
                         "source": {
                             "document": "Synthetic public protocol fixture",
                             "url": "https://example.test/protocol#did-1234",
+                            "evidence": "vehicle_fixture",
+                            "applicability": "exact_model_year",
                         },
                     }
                 ],
@@ -106,6 +110,37 @@ def test_every_cataloged_address_and_did_has_provenance() -> None:
             assert did.source.url.startswith("https://")
 
 
+def test_2024_catalog_exposes_address_evidence_and_applicability() -> None:
+    catalog = load_catalog("wrangler_jl_4xe_2024")
+    modules = {module.role: module for module in catalog.modules}
+
+    for role in {"powertrain", "hybrid", "transmission"}:
+        assert modules[role].source.evidence == "vehicle_fixture"
+        assert modules[role].source.applicability == "exact_model_year"
+
+    for role in {"abs_esc", "steering", "body_gateway", "cluster", "adas"}:
+        assert modules[role].source.evidence == "community_reference"
+        assert modules[role].source.applicability == "community_unverified"
+        assert modules[role].dids == ()
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("evidence", "rumor"), ("applicability", "exact_2024")],
+)
+def test_rejects_unknown_provenance_classification(
+    monkeypatch: pytest.MonkeyPatch,
+    field: str,
+    value: str,
+) -> None:
+    data = _valid_catalog_data()
+    data["modules"][0]["source"][field] = value
+    _install_catalog(monkeypatch, data)
+
+    with pytest.raises(CatalogValidationError, match="provenance"):
+        load_catalog("synthetic")
+
+
 def test_catalog_exposes_only_immutable_scanner_inputs(monkeypatch: pytest.MonkeyPatch) -> None:
     _install_catalog(monkeypatch, _valid_catalog_data())
 
@@ -127,15 +162,29 @@ def test_catalog_exposes_only_immutable_scanner_inputs(monkeypatch: pytest.Monke
     ).payload == bytes.fromhex("221234")
 
 
-def test_rejects_duplicate_can_pairs(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_rejects_duplicate_tx_ids(monkeypatch: pytest.MonkeyPatch) -> None:
     data = _valid_catalog_data()
     duplicate = dict(data["modules"][0])
     duplicate["key"] = "duplicate_control"
     duplicate["role"] = "duplicate"
+    duplicate["rx_id"] = "0x609"
     data["modules"].append(duplicate)
     _install_catalog(monkeypatch, data)
 
-    with pytest.raises(CatalogValidationError, match="duplicate CAN pair"):
+    with pytest.raises(CatalogValidationError, match="duplicate tx_id"):
+        load_catalog("synthetic")
+
+
+def test_rejects_duplicate_rx_ids(monkeypatch: pytest.MonkeyPatch) -> None:
+    data = _valid_catalog_data()
+    duplicate = dict(data["modules"][0])
+    duplicate["key"] = "duplicate_control"
+    duplicate["role"] = "duplicate"
+    duplicate["tx_id"] = "0x601"
+    data["modules"].append(duplicate)
+    _install_catalog(monkeypatch, data)
+
+    with pytest.raises(CatalogValidationError, match="duplicate rx_id"):
         load_catalog("synthetic")
 
 
@@ -157,7 +206,7 @@ def test_rejects_unsupported_service_values(monkeypatch: pytest.MonkeyPatch) -> 
         load_catalog("synthetic")
 
 
-@pytest.mark.parametrize("target", ["module", "did"])
+@pytest.mark.parametrize("target", ["module", "did", "url_type"])
 def test_rejects_missing_provenance(
     monkeypatch: pytest.MonkeyPatch,
     target: str,
@@ -165,8 +214,23 @@ def test_rejects_missing_provenance(
     data = _valid_catalog_data()
     if target == "module":
         data["modules"][0]["source"]["document"] = ""
-    else:
+    elif target == "did":
         data["modules"][0]["dids"][0]["source"]["url"] = "http://not-secure.test"
+    else:
+        data["modules"][0]["source"]["url"] = 42
+    _install_catalog(monkeypatch, data)
+
+    with pytest.raises(CatalogValidationError, match="provenance"):
+        load_catalog("synthetic")
+
+
+@pytest.mark.parametrize("url", ["https://", "https://[broken"])
+def test_rejects_provenance_url_without_valid_network_location(
+    monkeypatch: pytest.MonkeyPatch,
+    url: str,
+) -> None:
+    data = _valid_catalog_data()
+    data["modules"][0]["source"]["url"] = url
     _install_catalog(monkeypatch, data)
 
     with pytest.raises(CatalogValidationError, match="provenance"):
@@ -175,15 +239,28 @@ def test_rejects_missing_provenance(
 
 @pytest.mark.parametrize(
     ("field", "value"),
-    [("scale", float("nan")), ("offset", float("inf"))],
+    [("scale", float("nan")), ("offset", float("inf")), ("scale", True)],
 )
 def test_rejects_non_finite_scaling(
     monkeypatch: pytest.MonkeyPatch,
     field: str,
-    value: float,
+    value: object,
 ) -> None:
     data = _valid_catalog_data()
     data["modules"][0]["dids"][0][field] = value
+    _install_catalog(monkeypatch, data)
+
+    with pytest.raises(CatalogValidationError, match="finite"):
+        load_catalog("synthetic")
+
+
+@pytest.mark.parametrize("field", ["scale", "offset"])
+def test_rejects_scaling_too_large_for_float(
+    monkeypatch: pytest.MonkeyPatch,
+    field: str,
+) -> None:
+    data = _valid_catalog_data()
+    data["modules"][0]["dids"][0][field] = 10**400
     _install_catalog(monkeypatch, data)
 
     with pytest.raises(CatalogValidationError, match="finite"):
@@ -276,6 +353,41 @@ def test_rejects_invalid_enum_map(
 
     with pytest.raises(CatalogValidationError, match=message):
         load_catalog("synthetic")
+
+
+@pytest.mark.parametrize(
+    ("signed", "enum_key"),
+    [(False, "-1"), (False, "256"), (True, "-129"), (True, "128")],
+)
+def test_rejects_enum_keys_outside_one_byte_representable_range(
+    monkeypatch: pytest.MonkeyPatch,
+    signed: bool,
+    enum_key: str,
+) -> None:
+    data = _valid_catalog_data()
+    did = data["modules"][0]["dids"][0]
+    did["signed"] = signed
+    did["width"] = 1
+    did["enum_map"] = {enum_key: "outside range"}
+    _install_catalog(monkeypatch, data)
+
+    with pytest.raises(CatalogValidationError, match="representable"):
+        load_catalog("synthetic")
+
+
+def test_accepts_signed_enum_keys_at_one_byte_boundaries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    data = _valid_catalog_data()
+    did = data["modules"][0]["dids"][0]
+    did["signed"] = True
+    did["width"] = 1
+    did["enum_map"] = {"-128": "minimum", "127": "maximum"}
+    _install_catalog(monkeypatch, data)
+
+    loaded = load_catalog("synthetic").modules[0].dids[0]
+
+    assert loaded.enum_map == {-128: "minimum", 127: "maximum"}
 
 
 def test_rejects_non_boolean_did_signedness(monkeypatch: pytest.MonkeyPatch) -> None:

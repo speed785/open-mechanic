@@ -13,7 +13,9 @@
       "dids": [],
       "source": {
         "document": "OBDb Jeep Wrangler 4xe 2024 command support fixture @ 2160899a",
-        "url": "https://github.com/OBDb/jeep-Wrangler-4xe/blob/2160899a65432a7b909634f6ebf885eb96e4b930/tests/test_cases/2024/command_support.yaml"
+        "url": "https://github.com/OBDb/jeep-Wrangler-4xe/blob/2160899a65432a7b909634f6ebf885eb96e4b930/tests/test_cases/2024/command_support.yaml",
+        "evidence": "vehicle_fixture",
+        "applicability": "exact_model_year"
       }
     },
     {
@@ -26,7 +28,9 @@
       "dids": [],
       "source": {
         "document": "OBDb Jeep Wrangler 4xe 2024 command support fixture @ 2160899a",
-        "url": "https://github.com/OBDb/jeep-Wrangler-4xe/blob/2160899a65432a7b909634f6ebf885eb96e4b930/tests/test_cases/2024/command_support.yaml"
+        "url": "https://github.com/OBDb/jeep-Wrangler-4xe/blob/2160899a65432a7b909634f6ebf885eb96e4b930/tests/test_cases/2024/command_support.yaml",
+        "evidence": "vehicle_fixture",
+        "applicability": "exact_model_year"
       }
     },
     {
@@ -39,7 +43,9 @@
       "dids": [],
       "source": {
         "document": "OBDb Jeep Wrangler 4xe 2024 command support fixture @ 2160899a",
-        "url": "https://github.com/OBDb/jeep-Wrangler-4xe/blob/2160899a65432a7b909634f6ebf885eb96e4b930/tests/test_cases/2024/command_support.yaml"
+        "url": "https://github.com/OBDb/jeep-Wrangler-4xe/blob/2160899a65432a7b909634f6ebf885eb96e4b930/tests/test_cases/2024/command_support.yaml",
+        "evidence": "vehicle_fixture",
+        "applicability": "exact_model_year"
       }
     },
     {
@@ -52,7 +58,9 @@
       "dids": [],
       "source": {
         "document": "FCA CAN Bus and Message Reference - public Jeep UDS module table",
-        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html"
+        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html",
+        "evidence": "community_reference",
+        "applicability": "community_unverified"
       }
     },
     {
@@ -65,7 +73,9 @@
       "dids": [],
       "source": {
         "document": "FCA CAN Bus and Message Reference - public Jeep UDS module table",
-        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html"
+        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html",
+        "evidence": "community_reference",
+        "applicability": "community_unverified"
       }
     },
     {
@@ -78,7 +88,9 @@
       "dids": [],
       "source": {
         "document": "FCA CAN Bus and Message Reference - public Jeep UDS module table",
-        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html"
+        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html",
+        "evidence": "community_reference",
+        "applicability": "community_unverified"
       }
     },
     {
@@ -91,7 +103,9 @@
       "dids": [],
       "source": {
         "document": "FCA CAN Bus and Message Reference - public Jeep UDS module table",
-        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html"
+        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html",
+        "evidence": "community_reference",
+        "applicability": "community_unverified"
       }
     },
     {
@@ -104,7 +118,9 @@
       "dids": [],
       "source": {
         "document": "FCA CAN Bus and Message Reference - public Jeep UDS module table",
-        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html"
+        "url": "https://magikh0e.pl/pubCarHacking/bus-message-reference.html",
+        "evidence": "community_reference",
+        "applicability": "community_unverified"
       }
     }
   ]
