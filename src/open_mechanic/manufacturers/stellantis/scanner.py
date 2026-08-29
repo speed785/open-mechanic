@@ -187,9 +187,7 @@ class StellantisScanner:
         if pending_count and len(payloads) - pending_count == 1:
             final = payloads[pending_count]
             if final[:1] == bytes((request.service + 0x40,)) or (
-                len(final) == 3
-                and final[:2] == bytes((0x7F, request.service))
-                and final[2] != 0x78
+                len(final) == 3 and final[:2] == bytes((0x7F, request.service)) and final[2] != 0x78
             ):
                 return final
         return payloads[0]

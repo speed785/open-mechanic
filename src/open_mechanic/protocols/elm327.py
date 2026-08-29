@@ -12,7 +12,7 @@ from typing import Protocol, cast
 
 import serial
 
-from open_mechanic.protocols.isotp import CANFrame, reassemble_isotp
+from open_mechanic.protocols.isotp import CANFrame, ISOTPError, reassemble_isotp
 from open_mechanic.protocols.requests import DiagnosticRequest
 
 
@@ -130,11 +130,14 @@ class ELM327Transport:
         for line in lines:
             frame = self._parse_can_frame(line)
             frames_by_responder[frame.responder_id].append(frame)
-        return [
-            RawDiagnosticResponse(responder_id, payload)
-            for responder_id, frames in frames_by_responder.items()
-            for payload in self._reassemble_messages(frames)
-        ]
+        try:
+            return [
+                RawDiagnosticResponse(responder_id, payload)
+                for responder_id, frames in frames_by_responder.items()
+                for payload in self._reassemble_messages(frames)
+            ]
+        except ISOTPError as error:
+            raise ELM327ProtocolError("adapter returned malformed ISO-TP response") from error
 
     def close(self) -> None:
         """Close the current serial connection, if one is open."""
